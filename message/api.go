@@ -78,6 +78,39 @@ func (a *api) SendPrivate(req *SendPrivateReq) (*SendResp, error) {
 		"pushContent": req.PushContent,
 		"pushData":    req.PushData,
 	}
+	if req.PushExt != "" {
+		params["pushExt"] = req.PushExt
+	}
+	if req.DisablePush {
+		params["disablePush"] = "true"
+	}
+	if req.Count > 0 {
+		params["count"] = strconv.Itoa(req.Count)
+	}
+	if req.ContentAvailable != 0 {
+		params["contentAvailable"] = strconv.Itoa(req.ContentAvailable)
+	}
+	if req.IsPersisted != nil {
+		params["isPersisted"] = strconv.Itoa(*req.IsPersisted)
+	}
+	if req.IsIncludeSender != nil {
+		params["isIncludeSender"] = strconv.Itoa(*req.IsIncludeSender)
+	}
+	if req.DisableUpdateLastMsg {
+		params["disableUpdateLastMsg"] = "true"
+	}
+	if req.Expansion {
+		params["expansion"] = "true"
+	}
+	if req.ExtraContent != "" {
+		params["extraContent"] = req.ExtraContent
+	}
+	if req.NeedReadReceipt != 0 {
+		params["needReadReceipt"] = strconv.Itoa(req.NeedReadReceipt)
+	}
+	if req.VerifyBlacklist != 0 {
+		params["verifyBlacklist"] = strconv.Itoa(req.VerifyBlacklist)
+	}
 	err := a.client.Post(pathPrivatePublish, params, resp)
 	if err != nil {
 		return nil, err
@@ -95,6 +128,39 @@ func (a *api) SendGroup(req *SendGroupReq) (*SendResp, error) {
 		"content":     req.Content,
 		"pushContent": req.PushContent,
 		"pushData":    req.PushData,
+	}
+	if len(req.ToUserId) > 0 {
+		params["toUserId"] = strings.Join(req.ToUserId, ",")
+	}
+	if req.PushExt != "" {
+		params["pushExt"] = req.PushExt
+	}
+	if req.DisablePush {
+		params["disablePush"] = "true"
+	}
+	if req.IsIncludeSender != nil {
+		params["isIncludeSender"] = strconv.Itoa(*req.IsIncludeSender)
+	}
+	if req.IsPersisted != nil {
+		params["isPersisted"] = strconv.Itoa(*req.IsPersisted)
+	}
+	if req.IsMentioned != 0 {
+		params["isMentioned"] = strconv.Itoa(req.IsMentioned)
+	}
+	if req.ContentAvailable != 0 {
+		params["contentAvailable"] = strconv.Itoa(req.ContentAvailable)
+	}
+	if req.Expansion {
+		params["expansion"] = "true"
+	}
+	if req.ExtraContent != "" {
+		params["extraContent"] = req.ExtraContent
+	}
+	if req.DisableUpdateLastMsg {
+		params["disableUpdateLastMsg"] = "true"
+	}
+	if req.NeedReadReceipt != 0 {
+		params["needReadReceipt"] = strconv.Itoa(req.NeedReadReceipt)
 	}
 	err := a.client.Post(pathGroupPublish, params, resp)
 	if err != nil {

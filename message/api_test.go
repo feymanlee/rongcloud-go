@@ -14,6 +14,8 @@ func assertEqual(t *testing.T, got, want any) {
 	}
 }
 
+func intPtr(v int) *int { return &v }
+
 func TestSendPrivate(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
@@ -40,6 +42,55 @@ func TestSendPrivate(t *testing.T) {
 	assertEqual(t, call.Params["content"], `{"content":"hello"}`)
 	assertEqual(t, call.Params["pushContent"], "you have a message")
 	assertEqual(t, call.Params["pushData"], `{"key":"val"}`)
+	// optional fields should not be present when zero value
+	if _, ok := call.Params["disablePush"]; ok {
+		t.Error("disablePush should not be set")
+	}
+	if _, ok := call.Params["isPersisted"]; ok {
+		t.Error("isPersisted should not be set when nil")
+	}
+}
+
+func TestSendPrivate_AllFields(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	resp, err := a.SendPrivate(&SendPrivateReq{
+		FromUserId:           "fromUser1",
+		ToUserId:             []string{"toUser1"},
+		ObjectName:           "RC:TxtMsg",
+		Content:              `{"content":"hello"}`,
+		PushContent:          "push",
+		PushData:             "data",
+		PushExt:              `{"title":"hi"}`,
+		DisablePush:          true,
+		Count:                5,
+		ContentAvailable:     1,
+		IsPersisted:          intPtr(0),
+		IsIncludeSender:      intPtr(1),
+		DisableUpdateLastMsg: true,
+		Expansion:            true,
+		ExtraContent:         `{"k":"v"}`,
+		NeedReadReceipt:      1,
+		VerifyBlacklist:      1,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Params["pushExt"], `{"title":"hi"}`)
+	assertEqual(t, call.Params["disablePush"], "true")
+	assertEqual(t, call.Params["count"], "5")
+	assertEqual(t, call.Params["contentAvailable"], "1")
+	assertEqual(t, call.Params["isPersisted"], "0")
+	assertEqual(t, call.Params["isIncludeSender"], "1")
+	assertEqual(t, call.Params["disableUpdateLastMsg"], "true")
+	assertEqual(t, call.Params["expansion"], "true")
+	assertEqual(t, call.Params["extraContent"], `{"k":"v"}`)
+	assertEqual(t, call.Params["needReadReceipt"], "1")
+	assertEqual(t, call.Params["verifyBlacklist"], "1")
 }
 
 func TestSendPrivate_Error(t *testing.T) {
@@ -80,6 +131,55 @@ func TestSendGroup(t *testing.T) {
 	assertEqual(t, call.Params["toGroupId"], "group1,group2")
 	assertEqual(t, call.Params["objectName"], "RC:TxtMsg")
 	assertEqual(t, call.Params["content"], `{"content":"hi"}`)
+	// optional fields should not be present when zero value
+	if _, ok := call.Params["toUserId"]; ok {
+		t.Error("toUserId should not be set when empty")
+	}
+	if _, ok := call.Params["isMentioned"]; ok {
+		t.Error("isMentioned should not be set when zero")
+	}
+}
+
+func TestSendGroup_AllFields(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	resp, err := a.SendGroup(&SendGroupReq{
+		FromUserId:           "fromUser1",
+		ToGroupId:            []string{"group1"},
+		ToUserId:             []string{"u1", "u2"},
+		ObjectName:           "RC:TxtMsg",
+		Content:              `{"content":"hi"}`,
+		PushContent:          "push",
+		PushData:             "data",
+		PushExt:              `{"title":"grp"}`,
+		DisablePush:          true,
+		IsIncludeSender:      intPtr(1),
+		IsPersisted:          intPtr(0),
+		IsMentioned:          1,
+		ContentAvailable:     1,
+		Expansion:            true,
+		ExtraContent:         `{"k":"v"}`,
+		DisableUpdateLastMsg: true,
+		NeedReadReceipt:      1,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Params["toUserId"], "u1,u2")
+	assertEqual(t, call.Params["pushExt"], `{"title":"grp"}`)
+	assertEqual(t, call.Params["disablePush"], "true")
+	assertEqual(t, call.Params["isIncludeSender"], "1")
+	assertEqual(t, call.Params["isPersisted"], "0")
+	assertEqual(t, call.Params["isMentioned"], "1")
+	assertEqual(t, call.Params["contentAvailable"], "1")
+	assertEqual(t, call.Params["expansion"], "true")
+	assertEqual(t, call.Params["extraContent"], `{"k":"v"}`)
+	assertEqual(t, call.Params["disableUpdateLastMsg"], "true")
+	assertEqual(t, call.Params["needReadReceipt"], "1")
 }
 
 func TestSendGroup_Error(t *testing.T) {
