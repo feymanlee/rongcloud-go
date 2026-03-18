@@ -43,7 +43,7 @@ func TestSet(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
 
-	gender := 1
+	gender := GenderMale
 	req := &SetReq{
 		UserID: "user1",
 		UserProfile: &UserProfile{

@@ -2,6 +2,15 @@ package userprofile
 
 import "github.com/feymanlee/rongcloud-go/internal/types"
 
+// Gender 性别类型
+type Gender int
+
+const (
+	GenderUnknown Gender = 0 // 未知
+	GenderMale    Gender = 1 // 男
+	GenderFemale  Gender = 2 // 女
+)
+
 // UserProfile 用户基本资料
 type UserProfile struct {
 	UniqueId    string `json:"uniqueId,omitempty"`    // 应用标识，最长 32 字符
@@ -9,7 +18,7 @@ type UserProfile struct {
 	PortraitUri string `json:"portraitUri,omitempty"` // 头像 URL，最长 1024 字符
 	Email       string `json:"email,omitempty"`       // 邮箱，最长 128 字符
 	Birthday    string `json:"birthday,omitempty"`    // 生日，最长 32 字符
-	Gender      *int   `json:"gender,omitempty"`      // 性别：0 未知，1 男，2 女
+	Gender      *Gender `json:"gender,omitempty"`     // 性别：0 未知，1 男，2 女
 	Location    string `json:"location,omitempty"`    // 地理位置，最长 32 字符
 	Role        *int   `json:"role,omitempty"`        // 用户角色，0-100
 	Level       *int   `json:"level,omitempty"`       // 用户等级，0-100
