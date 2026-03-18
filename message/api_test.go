@@ -465,7 +465,7 @@ func TestSendPrivateTemplate(t *testing.T) {
 		t.Fatalf("expected body to be *SendPrivateTemplateReq, got %T", call.Body)
 	}
 	assertEqual(t, body.FromUserId, "tmplUser")
-	assertEqual(t, body.ObjectName, "RC:TxtMsg")
+	assertEqual(t, body.ObjectName, ObjectName("RC:TxtMsg"))
 }
 
 func TestSendPrivateTemplate_Error(t *testing.T) {

@@ -221,7 +221,7 @@ func TestRcNtf_String(t *testing.T) {
 	}
 	assertEqual(t, got.OperatorId, "admin1")
 	assertEqual(t, got.RecallTime, int64(1620000000000))
-	assertEqual(t, got.OriginalObjectName, "RC:TxtMsg")
+	assertEqual(t, got.OriginalObjectName, ObjectName("RC:TxtMsg"))
 	assertEqual(t, got.Admin, true)
 	assertEqual(t, got.Delete, false)
 }

@@ -73,7 +73,7 @@ func (a *api) SendPrivate(req *SendPrivateReq) (*SendResp, error) {
 	params := map[string]string{
 		"fromUserId":  req.FromUserId,
 		"toUserId":    strings.Join(req.ToUserId, ","),
-		"objectName":  req.ObjectName,
+		"objectName":  string(req.ObjectName),
 		"content":     req.Content,
 		"pushContent": req.PushContent,
 		"pushData":    req.PushData,
@@ -124,7 +124,7 @@ func (a *api) SendGroup(req *SendGroupReq) (*SendResp, error) {
 	params := map[string]string{
 		"fromUserId":  req.FromUserId,
 		"toGroupId":   strings.Join(req.ToGroupId, ","),
-		"objectName":  req.ObjectName,
+		"objectName":  string(req.ObjectName),
 		"content":     req.Content,
 		"pushContent": req.PushContent,
 		"pushData":    req.PushData,
@@ -175,7 +175,7 @@ func (a *api) SendChatroom(req *SendChatroomReq) (*SendResp, error) {
 	params := map[string]string{
 		"fromUserId":   req.FromUserId,
 		"toChatroomId": strings.Join(req.ToChatroomId, ","),
-		"objectName":   req.ObjectName,
+		"objectName":   string(req.ObjectName),
 		"content":      req.Content,
 	}
 	err := a.client.Post(pathChatroomPublish, params, resp)
@@ -191,7 +191,7 @@ func (a *api) SendSystem(req *SendSystemReq) (*SendResp, error) {
 	params := map[string]string{
 		"fromUserId":  req.FromUserId,
 		"toUserId":    strings.Join(req.ToUserId, ","),
-		"objectName":  req.ObjectName,
+		"objectName":  string(req.ObjectName),
 		"content":     req.Content,
 		"pushContent": req.PushContent,
 		"pushData":    req.PushData,
@@ -208,7 +208,7 @@ func (a *api) SendBroadcast(req *SendBroadcastReq) (*SendResp, error) {
 	resp := &SendResp{}
 	params := map[string]string{
 		"fromUserId": req.FromUserId,
-		"objectName": req.ObjectName,
+		"objectName": string(req.ObjectName),
 		"content":    req.Content,
 	}
 	err := a.client.Post(pathBroadcast, params, resp)
@@ -294,7 +294,7 @@ func (a *api) SendStatusMessage(req *SendStatusMessageReq) (*SendResp, error) {
 	params := map[string]string{
 		"fromUserId": req.FromUserId,
 		"toGroupId":  strings.Join(req.ToGroupId, ","),
-		"objectName": req.ObjectName,
+		"objectName": string(req.ObjectName),
 		"content":    req.Content,
 	}
 	err := a.client.Post(pathStatusMessageGroup, params, resp)

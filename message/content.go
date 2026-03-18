@@ -207,7 +207,7 @@ func (m ImgTextMsg) String() string { b, _ := json.Marshal(m); return string(b) 
 type RcNtf struct {
 	OperatorId             string    `json:"operatorId,omitempty"`             // 执行撤回的用户 ID
 	RecallTime             int64     `json:"recallTime"`                       // 被撤回消息的发送时间（毫秒）
-	OriginalObjectName     string    `json:"originalObjectName"`               // 被撤回消息的消息类型
+	OriginalObjectName     ObjectName `json:"originalObjectName"`              // 被撤回消息的消息类型
 	OriginalMessageContent string    `json:"originalMessageContent,omitempty"` // 被撤回消息的内容
 	RecallContent          string    `json:"recallContent,omitempty"`          // 撤回提示文本
 	RecallActionTime       int64     `json:"recallActionTime,omitempty"`       // 撤回操作时间（毫秒）
