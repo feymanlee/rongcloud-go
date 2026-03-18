@@ -202,6 +202,201 @@ func TestImgTextMsg_String(t *testing.T) {
 	assertEqual(t, got.Url, "https://example.com/article")
 }
 
+// ---------------------------------------------------------------------------
+// 通知类消息测试
+// ---------------------------------------------------------------------------
+
+func TestRcNtf_String(t *testing.T) {
+	msg := RcNtf{
+		OperatorId:         "admin1",
+		RecallTime:         1620000000000,
+		OriginalObjectName: "RC:TxtMsg",
+		Admin:              true,
+		Delete:             false,
+	}
+	s := msg.String()
+	var got RcNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.OperatorId, "admin1")
+	assertEqual(t, got.RecallTime, int64(1620000000000))
+	assertEqual(t, got.OriginalObjectName, "RC:TxtMsg")
+	assertEqual(t, got.Admin, true)
+	assertEqual(t, got.Delete, false)
+}
+
+func TestContactNtf_String(t *testing.T) {
+	msg := ContactNtf{
+		Operation:    "Request",
+		SourceUserId: "u1",
+		TargetUserId: "u2",
+		Message:      "let's be friends",
+	}
+	s := msg.String()
+	var got ContactNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Operation, "Request")
+	assertEqual(t, got.SourceUserId, "u1")
+	assertEqual(t, got.TargetUserId, "u2")
+	assertEqual(t, got.Message, "let's be friends")
+}
+
+func TestProfileNtf_String(t *testing.T) {
+	msg := ProfileNtf{Operation: "Update", Data: `{"name":"new"}`}
+	s := msg.String()
+	var got ProfileNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Operation, "Update")
+	assertEqual(t, got.Data, `{"name":"new"}`)
+}
+
+func TestInfoNtf_String(t *testing.T) {
+	msg := InfoNtf{Message: "you joined the group"}
+	s := msg.String()
+	var got InfoNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Message, "you joined the group")
+}
+
+func TestGrpNtf_String(t *testing.T) {
+	msg := GrpNtf{
+		OperatorUserId: "admin",
+		Operation:      "Add",
+		Data:           `{"targetUserIds":["u1"]}`,
+		Message:        "admin added u1",
+	}
+	s := msg.String()
+	var got GrpNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.OperatorUserId, "admin")
+	assertEqual(t, got.Operation, "Add")
+}
+
+func TestCmdNtf_String(t *testing.T) {
+	msg := CmdNtf{Name: "refreshUI", Data: `{"page":"home"}`}
+	s := msg.String()
+	var got CmdNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Name, "refreshUI")
+	assertEqual(t, got.Data, `{"page":"home"}`)
+}
+
+// ---------------------------------------------------------------------------
+// 信令类消息测试
+// ---------------------------------------------------------------------------
+
+func TestCmdMsg_String(t *testing.T) {
+	msg := CmdMsg{Name: "clearCache", Data: `{"scope":"all"}`}
+	s := msg.String()
+	var got CmdMsg
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Name, "clearCache")
+	assertEqual(t, got.Data, `{"scope":"all"}`)
+}
+
+func TestRcCmd_String(t *testing.T) {
+	msg := RcCmd{MessageUId: "msg-123", SentTime: 1620000000000}
+	s := msg.String()
+	var got RcCmd
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.MessageUId, "msg-123")
+	assertEqual(t, got.SentTime, int64(1620000000000))
+}
+
+func TestReadNtf_String(t *testing.T) {
+	msg := ReadNtf{MessageUId: "msg-456", LastMessageSend: 1620000000000, Type: 1}
+	s := msg.String()
+	var got ReadNtf
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.MessageUId, "msg-456")
+	assertEqual(t, got.Type, 1)
+}
+
+func TestRRReqMsg_String(t *testing.T) {
+	msg := RRReqMsg{MessageUId: "msg-789"}
+	s := msg.String()
+	var got RRReqMsg
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.MessageUId, "msg-789")
+}
+
+func TestRRRspMsg_String(t *testing.T) {
+	msg := RRRspMsg{ReceiptMessageDic: map[string]int64{"msg-1": 1620000000000}}
+	s := msg.String()
+	var got RRRspMsg
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.ReceiptMessageDic["msg-1"], int64(1620000000000))
+}
+
+func TestChrmKVNotiMsg_String(t *testing.T) {
+	msg := ChrmKVNotiMsg{Type: 1, Key: "theme", Value: "dark"}
+	s := msg.String()
+	var got ChrmKVNotiMsg
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.Type, 1)
+	assertEqual(t, got.Key, "theme")
+	assertEqual(t, got.Value, "dark")
+}
+
+func TestVCInvite_String(t *testing.T) {
+	msg := VCInvite{CallId: "call-1", MediaType: "video"}
+	s := msg.String()
+	var got VCInvite
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.CallId, "call-1")
+	assertEqual(t, got.MediaType, "video")
+}
+
+func TestVCHangup_String(t *testing.T) {
+	msg := VCHangup{CallId: "call-1", Reason: 1}
+	s := msg.String()
+	var got VCHangup
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.CallId, "call-1")
+	assertEqual(t, got.Reason, 1)
+}
+
+// ---------------------------------------------------------------------------
+// 状态类消息测试
+// ---------------------------------------------------------------------------
+
+func TestTypSts_String(t *testing.T) {
+	msg := TypSts{TypingContentType: "RC:TxtMsg"}
+	s := msg.String()
+	var got TypSts
+	if err := json.Unmarshal([]byte(s), &got); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	assertEqual(t, got.TypingContentType, "RC:TxtMsg")
+}
+
 func TestTxtMsg_String_OmitsEmpty(t *testing.T) {
 	msg := TxtMsg{Content: "simple"}
 	s := msg.String()
