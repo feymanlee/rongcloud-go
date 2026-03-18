@@ -65,6 +65,31 @@ type BatchQueryResp struct {
 	UserList []BatchQueryUserItem `json:"userList"`
 }
 
+// CleanReq 清除用户托管资料请求
+type CleanReq struct {
+	UserIDs []string // 用户 ID 列表，最多 20 个
+}
+
+// QueryReq 分页查询用户列表请求
+type QueryReq struct {
+	Page  int // 页码，默认 1
+	Size  int // 每页条数，默认 20，最大 100
+	Order int // 排序方式：0 按注册时间升序（默认），1 降序
+}
+
+// QueryUserItem 分页查询返回的单个用户资料
+type QueryUserItem struct {
+	UserID         string `json:"userId"`         // 用户 ID
+	UserProfile    string `json:"userProfile"`    // 基本资料（JSON 字符串）
+	UserExtProfile string `json:"userExtProfile"` // 扩展属性（JSON 字符串）
+}
+
+// QueryResp 分页查询用户列表响应
+type QueryResp struct {
+	types.BaseResp
+	UserList []QueryUserItem `json:"userList"`
+}
+
 // CleanExpansionReq 清除扩展信息请求
 type CleanExpansionReq struct {
 	UserID string   `json:"userId"`

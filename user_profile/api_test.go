@@ -204,6 +204,88 @@ func TestBatchQuery_Error(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Clean
+// ---------------------------------------------------------------------------
+
+func TestClean(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	err := a.Clean(&CleanReq{UserIDs: []string{"u1", "u2"}})
+	assertNoError(t, err)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Method, "Post")
+	assertEqual(t, call.Path, "/user/profile/clean.json")
+	assertEqual(t, call.Params["userId"], "u1,u2")
+}
+
+func TestClean_Error(t *testing.T) {
+	mock := testutil.NewMockClient()
+	mock.PostFunc = func(path string, params map[string]string, resp any) error {
+		return errors.New("clean failed")
+	}
+	a := NewAPI(mock)
+
+	err := a.Clean(&CleanReq{UserIDs: []string{"u1"}})
+	assertError(t, err)
+}
+
+// ---------------------------------------------------------------------------
+// Query
+// ---------------------------------------------------------------------------
+
+func TestQuery(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	resp, err := a.Query(&QueryReq{Page: 2, Size: 50, Order: 1})
+	assertNoError(t, err)
+	assertNotNil(t, resp)
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Method, "Post")
+	assertEqual(t, call.Path, "/user/profile/query.json")
+	assertEqual(t, call.Params["page"], "2")
+	assertEqual(t, call.Params["size"], "50")
+	assertEqual(t, call.Params["order"], "1")
+}
+
+func TestQuery_Defaults(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	_, err := a.Query(&QueryReq{})
+	assertNoError(t, err)
+
+	call := mock.LastCall()
+	if _, ok := call.Params["page"]; ok {
+		t.Error("page should not be set when zero")
+	}
+	if _, ok := call.Params["size"]; ok {
+		t.Error("size should not be set when zero")
+	}
+	if _, ok := call.Params["order"]; ok {
+		t.Error("order should not be set when zero")
+	}
+}
+
+func TestQuery_Error(t *testing.T) {
+	mock := testutil.NewMockClient()
+	mock.PostFunc = func(path string, params map[string]string, resp any) error {
+		return errors.New("query failed")
+	}
+	a := NewAPI(mock)
+
+	resp, err := a.Query(&QueryReq{Page: 1})
+	assertError(t, err)
+	if resp != nil {
+		t.Error("expected nil response on error")
+	}
+}
+
+// ---------------------------------------------------------------------------
 // CleanExpansion
 // ---------------------------------------------------------------------------
 
