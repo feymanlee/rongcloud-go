@@ -43,25 +43,53 @@ func TestSet(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
 
+	gender := 1
 	req := &SetReq{
-		UserID:  "user1",
-		Profile: []ProfileItem{{Key: "name", Value: "Alice"}},
+		UserID: "user1",
+		UserProfile: &UserProfile{
+			Name:   "Alice",
+			Gender: &gender,
+		},
+		UserExtProfile: map[string]string{
+			"ext_city": "Beijing",
+		},
 	}
 	err := a.Set(req)
 	assertNoError(t, err)
 
 	call := mock.LastCall()
-	assertEqual(t, call.Method, "PostJSON")
+	assertEqual(t, call.Method, "Post")
 	assertEqual(t, call.Path, "/user/profile/set.json")
-	body := call.Body.(*SetReq)
-	assertEqual(t, body.UserID, "user1")
-	assertEqual(t, len(body.Profile), 1)
-	assertEqual(t, body.Profile[0].Key, "name")
+	assertEqual(t, call.Params["userId"], "user1")
+	// userProfile should be a JSON string
+	if call.Params["userProfile"] == "" {
+		t.Error("userProfile should not be empty")
+	}
+	if call.Params["userExtProfile"] == "" {
+		t.Error("userExtProfile should not be empty")
+	}
+}
+
+func TestSet_OnlyProfile(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	req := &SetReq{
+		UserID:      "user1",
+		UserProfile: &UserProfile{Name: "Bob"},
+	}
+	err := a.Set(req)
+	assertNoError(t, err)
+
+	call := mock.LastCall()
+	if _, ok := call.Params["userExtProfile"]; ok {
+		t.Error("userExtProfile should not be set when empty")
+	}
 }
 
 func TestSet_Error(t *testing.T) {
 	mock := testutil.NewMockClient()
-	mock.PostJSONFunc = func(path string, body any, resp any) error {
+	mock.PostFunc = func(path string, params map[string]string, resp any) error {
 		return errors.New("set failed")
 	}
 	a := NewAPI(mock)

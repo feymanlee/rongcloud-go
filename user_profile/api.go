@@ -1,6 +1,8 @@
 package userprofile
 
 import (
+	"encoding/json"
+
 	"github.com/feymanlee/rongcloud-go/internal/core"
 	"github.com/feymanlee/rongcloud-go/internal/types"
 )
@@ -35,7 +37,18 @@ func NewAPI(client core.Client) API {
 
 func (a *api) Set(req *SetReq) error {
 	resp := &types.BaseResp{}
-	return a.client.PostJSON(pathSet, req, resp)
+	params := map[string]string{
+		"userId": req.UserID,
+	}
+	if req.UserProfile != nil {
+		b, _ := json.Marshal(req.UserProfile)
+		params["userProfile"] = string(b)
+	}
+	if len(req.UserExtProfile) > 0 {
+		b, _ := json.Marshal(req.UserExtProfile)
+		params["userExtProfile"] = string(b)
+	}
+	return a.client.Post(pathSet, params, resp)
 }
 
 func (a *api) Get(req *GetReq) (*GetResp, error) {
