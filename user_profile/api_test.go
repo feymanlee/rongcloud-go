@@ -170,6 +170,40 @@ func TestBatchGet_Error(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// BatchQuery
+// ---------------------------------------------------------------------------
+
+func TestBatchQuery(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	req := &BatchQueryReq{UserIDs: []string{"u1", "u2", "u3"}}
+	resp, err := a.BatchQuery(req)
+	assertNoError(t, err)
+	assertNotNil(t, resp)
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Method, "Post")
+	assertEqual(t, call.Path, "/user/profile/batch/query.json")
+	assertEqual(t, call.Params["userId"], "u1,u2,u3")
+}
+
+func TestBatchQuery_Error(t *testing.T) {
+	mock := testutil.NewMockClient()
+	mock.PostFunc = func(path string, params map[string]string, resp any) error {
+		return errors.New("batch query failed")
+	}
+	a := NewAPI(mock)
+
+	resp, err := a.BatchQuery(&BatchQueryReq{UserIDs: []string{"u1"}})
+	assertError(t, err)
+	if resp != nil {
+		t.Error("expected nil response on error")
+	}
+}
+
+// ---------------------------------------------------------------------------
 // CleanExpansion
 // ---------------------------------------------------------------------------
 

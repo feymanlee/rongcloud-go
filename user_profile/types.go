@@ -46,6 +46,25 @@ type BatchGetResp struct {
 	Data map[string]map[string]string `json:"data"`
 }
 
+// BatchQueryReq 批量查询用户资料请求
+type BatchQueryReq struct {
+	UserIDs []string // 用户 ID 列表，最多 100 个
+}
+
+// BatchQueryUserItem 批量查询返回的单个用户资料
+type BatchQueryUserItem struct {
+	UserID         string `json:"userId"`         // 用户 ID
+	Version        int64  `json:"version"`        // 用户资料版本号
+	UserProfile    string `json:"userProfile"`    // 基本资料（JSON 字符串）
+	UserExtProfile string `json:"userExtProfile"` // 扩展属性（JSON 字符串）
+}
+
+// BatchQueryResp 批量查询用户资料响应
+type BatchQueryResp struct {
+	types.BaseResp
+	UserList []BatchQueryUserItem `json:"userList"`
+}
+
 // CleanExpansionReq 清除扩展信息请求
 type CleanExpansionReq struct {
 	UserID string   `json:"userId"`
