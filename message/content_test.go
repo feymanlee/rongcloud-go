@@ -30,7 +30,6 @@ func TestTxtMsg_String(t *testing.T) {
 func TestImgMsg_String(t *testing.T) {
 	msg := ImgMsg{
 		Content:  "base64data",
-		Name:     "photo.jpg",
 		ImageUri: "https://example.com/photo.jpg",
 	}
 	s := msg.String()
@@ -39,7 +38,6 @@ func TestImgMsg_String(t *testing.T) {
 		t.Fatalf("unmarshal failed: %v", err)
 	}
 	assertEqual(t, got.Content, "base64data")
-	assertEqual(t, got.Name, "photo.jpg")
 	assertEqual(t, got.ImageUri, "https://example.com/photo.jpg")
 }
 

@@ -80,7 +80,6 @@ func (m TxtMsg) String() string { b, _ := json.Marshal(m); return string(b) }
 // ImgMsg 图片消息
 type ImgMsg struct {
 	Content  string    `json:"content"`         // Base64 缩略图（建议 5KB，最大 10KB）
-	Name     string    `json:"name,omitempty"`  // 文件名
 	ImageUri string    `json:"imageUri"`        // 图片远程地址
 	User     *UserInfo `json:"user,omitempty"`  // 发送者信息
 	Extra    string    `json:"extra,omitempty"` // 扩展信息
@@ -205,16 +204,16 @@ func (m ImgTextMsg) String() string { b, _ := json.Marshal(m); return string(b) 
 
 // RcNtf 撤回通知消息
 type RcNtf struct {
-	OperatorId             string    `json:"operatorId,omitempty"`             // 执行撤回的用户 ID
-	RecallTime             int64     `json:"recallTime"`                       // 被撤回消息的发送时间（毫秒）
-	OriginalObjectName     ObjectName `json:"originalObjectName"`              // 被撤回消息的消息类型
-	OriginalMessageContent string    `json:"originalMessageContent,omitempty"` // 被撤回消息的内容
-	RecallContent          string    `json:"recallContent,omitempty"`          // 撤回提示文本
-	RecallActionTime       int64     `json:"recallActionTime,omitempty"`       // 撤回操作时间（毫秒）
-	Admin                  bool      `json:"admin"`                            // 是否为管理员操作
-	Delete                 bool      `json:"delete"`                           // 移动端是否删除原消息记录
-	User                   *UserInfo `json:"user,omitempty"`                   // 发送者信息
-	Extra                  string    `json:"extra,omitempty"`                  // 扩展信息
+	OperatorId             string     `json:"operatorId,omitempty"`             // 执行撤回的用户 ID
+	RecallTime             int64      `json:"recallTime"`                       // 被撤回消息的发送时间（毫秒）
+	OriginalObjectName     ObjectName `json:"originalObjectName"`               // 被撤回消息的消息类型
+	OriginalMessageContent string     `json:"originalMessageContent,omitempty"` // 被撤回消息的内容
+	RecallContent          string     `json:"recallContent,omitempty"`          // 撤回提示文本
+	RecallActionTime       int64      `json:"recallActionTime,omitempty"`       // 撤回操作时间（毫秒）
+	Admin                  bool       `json:"admin"`                            // 是否为管理员操作
+	Delete                 bool       `json:"delete"`                           // 移动端是否删除原消息记录
+	User                   *UserInfo  `json:"user,omitempty"`                   // 发送者信息
+	Extra                  string     `json:"extra,omitempty"`                  // 扩展信息
 }
 
 func (m RcNtf) String() string { b, _ := json.Marshal(m); return string(b) }
