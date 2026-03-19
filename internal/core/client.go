@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -91,19 +92,22 @@ func (c *client) Post(path string, params map[string]string, resp any) error {
 	url := c.currentURI + path
 
 	r := c.resty.R().
-		SetFormData(params).
-		SetResult(resp)
+		SetFormData(params)
 
 	c.fillHeader(r, "application/x-www-form-urlencoded")
 
 	response, err := r.Post(url)
-	if err != nil {
+	if err != nil || response.StatusCode() >= 500 {
 		c.changeURI()
-		return err
+		url = c.currentURI + path
+		response, err = r.Post(url)
+		if err != nil {
+			return err
+		}
 	}
 
-	if response.StatusCode() >= 500 {
-		c.changeURI()
+	if err = json.Unmarshal(response.Body(), resp); err != nil {
+		return err
 	}
 
 	return c.checkResp(resp)
@@ -114,8 +118,7 @@ func (c *client) PostJSON(path string, body any, resp any) error {
 	url := c.currentURI + path
 
 	r := c.resty.R().
-		SetBody(body).
-		SetResult(resp)
+		SetBody(body)
 
 	c.fillHeader(r, "application/json")
 
@@ -127,6 +130,10 @@ func (c *client) PostJSON(path string, body any, resp any) error {
 
 	if response.StatusCode() >= 500 {
 		c.changeURI()
+	}
+
+	if err = json.Unmarshal(response.Body(), resp); err != nil {
+		return err
 	}
 
 	return c.checkResp(resp)
