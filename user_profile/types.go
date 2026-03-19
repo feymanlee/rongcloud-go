@@ -31,30 +31,6 @@ type SetReq struct {
 	UserExtProfile map[string]string // 自定义扩展属性（key 以 ext_ 开头，JSON 编码后作为 userExtProfile 参数）
 }
 
-// GetReq 获取用户资料请求
-type GetReq struct {
-	UserID string   `json:"userId"`
-	Keys   []string `json:"keys,omitempty"`
-}
-
-// GetResp 获取用户资料响应
-type GetResp struct {
-	types.BaseResp
-	Data map[string]string `json:"data"`
-}
-
-// BatchGetReq 批量获取用户资料请求
-type BatchGetReq struct {
-	UserIDs []string `json:"userIds"`
-	Keys    []string `json:"keys,omitempty"`
-}
-
-// BatchGetResp 批量获取用户资料响应
-type BatchGetResp struct {
-	types.BaseResp
-	Data map[string]map[string]string `json:"data"`
-}
-
 // BatchQueryReq 批量查询用户资料请求
 type BatchQueryReq struct {
 	UserIDs []string // 用户 ID 列表，最多 100 个
@@ -97,10 +73,4 @@ type QueryUserItem struct {
 type QueryResp struct {
 	types.BaseResp
 	UserList []QueryUserItem `json:"userList"`
-}
-
-// CleanExpansionReq 清除扩展信息请求
-type CleanExpansionReq struct {
-	UserID string   `json:"userId"`
-	Keys   []string `json:"keys,omitempty"`
 }
