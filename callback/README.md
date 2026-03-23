@@ -311,7 +311,7 @@ type MessageOperationCallback struct {
 
 // 消息回调服务
 // 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
-type MessageCallbackService struct {
+type MessageCallback struct {
     AppKey         string // 应用 App Key
     FromUserId     string // 发送用户 ID
     TargetId       string // 目标会话 ID
@@ -409,7 +409,7 @@ type HandlerConfig struct {
     OnChatroomKV         func(ResponseWriter, ChatroomKVCallback) error
     OnUserDeactivation   func(ResponseWriter, UserDeactivationCallback) error
     OnMessageOperation   func(ResponseWriter, MessageOperationCallback) error
-    OnMessageCallback    func(ResponseWriter, MessageCallbackService) error
+    OnMessageCallback    func(ResponseWriter, MessageCallback) error
     OnBotMessage         func(ResponseWriter, BotMessageCallback) error
 }
 ```

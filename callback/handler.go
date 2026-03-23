@@ -60,7 +60,7 @@ type HandlerConfig struct {
 	OnChatroomKV       func(w ResponseWriter, kv ChatroomKVCallback) error
 	OnUserDeactivation func(w ResponseWriter, deactivation UserDeactivationCallback) error
 	OnMessageOperation func(w ResponseWriter, operation MessageOperationCallback) error
-	OnMessageCallback  func(w ResponseWriter, msg MessageCallbackService) error
+	OnMessageCallback  func(w ResponseWriter, msg MessageCallback) error
 	OnBotMessage       func(w ResponseWriter, msg BotMessageCallback) error
 }
 
@@ -322,7 +322,7 @@ func (h *Handler) handleMessageCallback(rw *responseWriter, r *http.Request) {
 		return
 	}
 
-	callback := MessageCallbackService{
+	callback := MessageCallback{
 		AppKey:         r.FormValue("appKey"),
 		FromUserId:     r.FormValue("fromUserId"),
 		TargetId:       r.FormValue("targetId"),

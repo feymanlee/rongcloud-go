@@ -77,14 +77,14 @@ type UserDeactivationCallback struct {
 
 // MessageOperationCallback 消息操作状态同步回调（消息撤回/删除）
 type MessageOperationCallback struct {
-	EventType        int                           `json:"eventType"`        // 事件类型：1=消息撤回，2=消息删除
-	FromUserId       string                        `json:"fromUserId"`       // 操作人用户 ID
-	OptTime          int64                         `json:"optTime"`          // 操作时间戳（毫秒）
-	Source           string                        `json:"source"`           // 操作来源：Android、iOS、WebSocket、Server 等
-	ConversationInfo MessageOperationConversation  `json:"conversationInfo"` // 会话信息
-	OriginalMsgInfo  MessageOperationOriginalMsg   `json:"originalMsgInfo"`  // 原始消息信息
-	RecallMsgInfo    *MessageOperationRecallInfo   `json:"recallMsgInfo,omitempty"`   // 撤回消息特有信息（eventType=1时）
-	DeleteMsgInfo    *MessageOperationDeleteInfo   `json:"deleteMsgInfo,omitempty"`   // 删除消息特有信息（eventType=2时）
+	EventType        int                          `json:"eventType"`               // 事件类型：1=消息撤回，2=消息删除
+	FromUserId       string                       `json:"fromUserId"`              // 操作人用户 ID
+	OptTime          int64                        `json:"optTime"`                 // 操作时间戳（毫秒）
+	Source           string                       `json:"source"`                  // 操作来源：Android、iOS、WebSocket、Server 等
+	ConversationInfo MessageOperationConversation `json:"conversationInfo"`        // 会话信息
+	OriginalMsgInfo  MessageOperationOriginalMsg  `json:"originalMsgInfo"`         // 原始消息信息
+	RecallMsgInfo    *MessageOperationRecallInfo  `json:"recallMsgInfo,omitempty"` // 撤回消息特有信息（eventType=1时）
+	DeleteMsgInfo    *MessageOperationDeleteInfo  `json:"deleteMsgInfo,omitempty"` // 删除消息特有信息（eventType=2时）
 }
 
 // MessageOperationConversation 消息操作回调中的会话信息
@@ -96,8 +96,8 @@ type MessageOperationConversation struct {
 
 // MessageOperationOriginalMsg 消息操作回调中的原始消息信息
 type MessageOperationOriginalMsg struct {
-	MessageId    string `json:"messageId"`    // 原始消息 ID
-	MessageTime  int64  `json:"messageTime"`  // 原始消息时间
+	MessageId   string `json:"messageId"`   // 原始消息 ID
+	MessageTime int64  `json:"messageTime"` // 原始消息时间
 }
 
 // MessageOperationRecallInfo 消息撤回特有信息
@@ -113,9 +113,9 @@ type MessageOperationDeleteInfo struct {
 	MsgTimestamp int64 `json:"msgTimestamp"` // 时间戳（deleteType=2时有效）
 }
 
-// MessageCallbackService 消息回调服务（自定义条件消息抄送）
+// MessageCallback 消息回调服务（自定义条件消息抄送）
 // 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
-type MessageCallbackService struct {
+type MessageCallback struct {
 	AppKey         string `json:"appKey"`         // 应用 App Key
 	FromUserId     string `json:"fromUserId"`     // 发送用户 ID
 	TargetId       string `json:"targetId"`       // 目标会话 ID
@@ -147,28 +147,28 @@ type BotMessageCallback struct {
 
 // BotInfo 机器人信息
 type BotInfo struct {
-	UserId      string                 `json:"userId"`      // 机器人用户 ID
-	Name        string                 `json:"name"`        // 机器人名称
-	ProfileUrl  string                 `json:"profileUrl"`  // 机器人头像 URL
-	Type        string                 `json:"type"`        // 机器人类型
-	Metadata    map[string]interface{} `json:"metadata"`    // 机器人元数据
+	UserId     string                 `json:"userId"`     // 机器人用户 ID
+	Name       string                 `json:"name"`       // 机器人名称
+	ProfileUrl string                 `json:"profileUrl"` // 机器人头像 URL
+	Type       string                 `json:"type"`       // 机器人类型
+	Metadata   map[string]interface{} `json:"metadata"`   // 机器人元数据
 }
 
 // 机器人消息事件类型常量
 const (
 	// 消息事件
-	BotEventMessagePrivate              = "message:private"               // 私聊消息
-	BotEventMessageGroupMentioned       = "message:group_mentioned"       // 群组@消息
-	BotEventMessagePrivateRecall        = "message:private_recall"        // 私聊消息撤回
+	BotEventMessagePrivate              = "message:private"                // 私聊消息
+	BotEventMessageGroupMentioned       = "message:group_mentioned"        // 群组@消息
+	BotEventMessagePrivateRecall        = "message:private_recall"         // 私聊消息撤回
 	BotEventMessageGroupMentionedRecall = "message:group_mentioned_recall" // 群组@消息撤回
-	BotEventMessagePrivateRead          = "message:private_read"          // 私聊已读回执
-	BotEventMessageGroupRead            = "message:group_read"            // 群组已读回执
+	BotEventMessagePrivateRead          = "message:private_read"           // 私聊已读回执
+	BotEventMessageGroupRead            = "message:group_read"             // 群组已读回执
 	// 群组事件
-	BotEventGroupBotJoin   = "group:bot_join"   // 机器人被加入群组
-	BotEventGroupBotLeft   = "group:bot_left"   // 机器人被移出群组
-	BotEventGroupDismiss   = "group:dismiss"    // 群组解散
-	BotEventGroupUserJoin  = "group:user_join"  // 其他用户加入群组
-	BotEventGroupUserLeft  = "group:user_left"  // 其他用户离开群组
+	BotEventGroupBotJoin  = "group:bot_join"  // 机器人被加入群组
+	BotEventGroupBotLeft  = "group:bot_left"  // 机器人被移出群组
+	BotEventGroupDismiss  = "group:dismiss"   // 群组解散
+	BotEventGroupUserJoin = "group:user_join" // 其他用户加入群组
+	BotEventGroupUserLeft = "group:user_left" // 其他用户离开群组
 )
 
 // 会话类型常量 (channelType)
