@@ -216,6 +216,50 @@ callbackAPI.SetHandlerConfig(callback.HandlerConfig{
 - 返回 `nil` 且未调用 WriteResponse → 自动返回 `200 OK`
 - 返回 `error` 且未调用 WriteResponse → 返回 `500 Internal Server Error`
 
+### 消息回调服务特殊响应
+
+消息回调服务（`MessageCallback`）支持通过响应控制消息是否下发及修改消息内容：
+
+```go
+callbackAPI.SetHandlerConfig(callback.HandlerConfig{
+    OnMessageCallback: func(w callback.ResponseWriter, msg callback.MessageCallback) error {
+        // 检查消息内容
+        if strings.Contains(msg.Content, "敏感词") {
+            // 拒绝消息下发
+            resp := callback.MessageCallbackResponse{
+                Pass:  callback.MessageCallbackPassReject,
+                Extra: "消息包含敏感内容",
+            }
+            body, _ := json.Marshal(resp)
+            w.Header().Set("Content-Type", "application/json")
+            w.WriteResponse(200, string(body))
+            return nil
+        }
+
+        // 修改消息内容
+        if msg.ChannelType == callback.ChannelTypeGroup {
+            resp := callback.MessageCallbackResponse{
+                Pass:               callback.MessageCallbackPassContinue,
+                ReplaceContent:     `{"content":"[审核通过] ` + msg.Content + `"}`,
+                ReplacePushContent: "您有一条新消息",
+            }
+            body, _ := json.Marshal(resp)
+            w.Header().Set("Content-Type", "application/json")
+            w.WriteResponse(200, string(body))
+            return nil
+        }
+
+        // 正常下发
+        return nil
+    },
+})
+```
+
+**pass 字段说明：**
+- `0` (`MessageCallbackPassReject`) - 拒绝下发消息
+- `1` (`MessageCallbackPassContinue`) - 正常下发并继续执行其他回调
+- `2` (`MessageCallbackPassStop`) - 正常下发但不继续执行后续回调
+
 ## 回调类型详解
 
 ### 消息路由回调 (MessageRouteCallback)
@@ -332,6 +376,25 @@ type MessageCallback struct {
     ClientIp       string // 用户 IP 地址及端口
     AiGenerated    bool   // 是否为 AI 生成消息
 }
+
+// 消息回调服务响应
+// 应用服务器通过此响应控制消息是否下发及修改消息内容
+type MessageCallbackResponse struct {
+    Pass                 int    // 0=拒绝下发，1=正常下发并继续执行其他回调，2=正常下发但不继续执行
+    ReplaceContent       string // 替换后的消息内容（JSON结构）
+    ReplacePushContent   string // 替换后的推送内容
+    ReplaceDisablePush   bool   // 是否为静默消息
+    ReplacePushExt       string // 替换后的推送扩展配置
+    ReplaceExtraContent  string // 替换后的消息扩展内容
+    Extra                string // 消息拒绝时通知发送方的数据（≤1024字符）
+}
+
+// 消息回调响应的 pass 字段常量
+const (
+    MessageCallbackPassReject   = 0 // 拒绝下发
+    MessageCallbackPassContinue = 1 // 正常下发并继续执行其他回调
+    MessageCallbackPassStop     = 2 // 正常下发但不继续执行后续回调
+)
 
 // 机器人消息回调
 type BotMessageCallback struct {

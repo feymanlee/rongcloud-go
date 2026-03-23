@@ -137,6 +137,25 @@ type MessageCallback struct {
 	AiGenerated    bool   `json:"aiGenerated"`    // 选填，是否为 AI 生成消息，需提工单开启
 }
 
+// MessageCallbackResponse 消息回调服务响应
+// 应用服务器通过此响应控制消息是否下发及修改消息内容
+type MessageCallbackResponse struct {
+	Pass                 int    `json:"pass"`                 // 0=拒绝下发，1=正常下发并继续执行其他回调，2=正常下发但不继续执行
+	ReplaceContent       string `json:"replaceContent,omitempty"`       // 替换后的消息内容（JSON结构）
+	ReplacePushContent   string `json:"replacePushContent,omitempty"`   // 替换后的推送内容
+	ReplaceDisablePush   bool   `json:"replaceDisablePush,omitempty"`   // 是否为静默消息
+	ReplacePushExt       string `json:"replacePushExt,omitempty"`       // 替换后的推送扩展配置
+	ReplaceExtraContent  string `json:"replaceExtraContent,omitempty"`  // 替换后的消息扩展内容
+	Extra                string `json:"extra,omitempty"`                // 消息拒绝时通知发送方的数据（≤1024字符）
+}
+
+// 消息回调响应的 pass 字段常量
+const (
+	MessageCallbackPassReject      = 0 // 拒绝下发
+	MessageCallbackPassContinue    = 1 // 正常下发并继续执行其他回调
+	MessageCallbackPassStop        = 2 // 正常下发但不继续执行后续回调
+)
+
 // BotMessageCallback 机器人消息回调
 type BotMessageCallback struct {
 	Type      string                 `json:"type"`      // 回调事件类型
