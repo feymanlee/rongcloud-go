@@ -23,11 +23,14 @@ func sha1Sum(data string) string {
 
 // ExtractParams 从 HTTP 请求中提取回调参数
 // 优先从 Query 参数获取，如果不在 Query 中则尝试 Header（用于审核结果回调）
+// 对于消息回调服务，appKey 可能在请求正文中
 func ExtractParams(r *http.Request) CallbackParams {
 	params := CallbackParams{}
 
-	// 优先从 Query 参数获取
-	params.AppKey = r.URL.Query().Get("appKey")
+	// 提取 appKey（支持 Query、Header 和请求体）
+	params.AppKey = ExtractAppKey(r)
+
+	// 优先从 Query 参数获取其他参数
 	params.Nonce = r.URL.Query().Get("nonce")
 	params.Timestamp = r.URL.Query().Get("timestamp")
 	params.Signature = r.URL.Query().Get("signature")
@@ -42,11 +45,33 @@ func ExtractParams(r *http.Request) CallbackParams {
 	if params.Timestamp == "" {
 		params.Timestamp = r.Header.Get("Timestamp")
 	}
-	if params.AppKey == "" {
-		params.AppKey = r.Header.Get("App-Key")
-	}
 
 	return params
+}
+
+// ExtractAppKey 从请求中提取 appKey，按以下顺序查找：
+// 1. 已解析的表单数据（用于消息回调服务，appKey 在 form-urlencoded 请求体中）
+// 2. URL Query 参数
+// 3. HTTP Header
+func ExtractAppKey(r *http.Request) string {
+	// 1. 优先从已解析的表单获取（消息回调服务的 appKey 在请求体中）
+	if r.Form != nil {
+		if appKey := r.FormValue("appKey"); appKey != "" {
+			return appKey
+		}
+	}
+
+	// 2. 尝试从 Query 获取
+	if appKey := r.URL.Query().Get("appKey"); appKey != "" {
+		return appKey
+	}
+
+	// 3. 尝试从 Header 获取
+	if appKey := r.Header.Get("App-Key"); appKey != "" {
+		return appKey
+	}
+
+	return ""
 }
 
 // VerifyRequest 便捷方法：从请求中提取参数并验证签名

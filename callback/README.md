@@ -330,6 +330,7 @@ type ResponseWriter interface {
 1. **签名参数位置**:
    - 大部分回调的签名参数在 URL Query 中
    - 审核结果回调的签名在 HTTP Header 中
+   - 消息回调服务的 AppKey 在请求体（form-urlencoded）中，本库会自动处理
 
 2. **请求格式**:
    - 消息路由回调使用 `application/x-www-form-urlencoded`

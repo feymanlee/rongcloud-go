@@ -92,6 +92,14 @@ func NewHandler(config HandlerConfig) *Handler {
 // ServeHTTP 实现 http.Handler 接口
 // 根据请求路径分发到不同的回调处理器
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// 对于消息路由回调，appKey 在请求体中，需要先解析表单
+	if r.URL.Path == h.config.MessageRoutePath {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// 验证签名
 	if !VerifyRequest(r, h.config.AppSecret) {
 		http.Error(w, "Invalid signature", http.StatusUnauthorized)
@@ -139,7 +147,8 @@ func (h *Handler) handleMessageRoute(rw *responseWriter, r *http.Request) {
 		return
 	}
 
-	// 解析 form 数据
+	// 注意：ServeHTTP 中已经调用过 ParseForm 来提取 appKey 验证签名
+	// 这里再次调用是安全的（ParseForm 会检查是否已经解析过）
 	if err := r.ParseForm(); err != nil {
 		http.Error(rw, "Invalid form data", http.StatusBadRequest)
 		return
