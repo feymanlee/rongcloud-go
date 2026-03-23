@@ -69,61 +69,63 @@ func main() {
         },
     })
 
-    http.Handle("/rongcloud/callback", handler)
+    // 将同一个 Handler 注册到多个路径（与融云后台配置的路径对应）
+    http.Handle("/message/sync", handler)
+    http.Handle("/user/onlinestatus", handler)
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
 ```
 
 **融云后台配置说明：**
 
-上面的代码将 Handler 注册到了 `/rongcloud/callback` 路径。在融云控制台配置回调地址时，你需要填写完整的 URL：
+上面的代码将 Handler 注册到了 `/message/sync` 和 `/user/onlinestatus` 路径。在融云控制台配置回调地址时，需要填写完整的 URL：
 
 ```
-https://your-domain.com/rongcloud/callback
+https://your-domain.com/message/sync
+https://your-domain.com/user/onlinestatus
 ```
 
 例如：
 - 如果你的服务部署在 `https://api.example.com`
-- 代码中注册的路径是 `/rongcloud/callback`
-- 那么融云后台应该配置：`https://api.example.com/rongcloud/callback`
+- 代码中注册的路径是 `/message/sync`
+- 那么融云后台消息路由回调应该配置为：`https://api.example.com/message/sync`
 
-**多个回调类型使用同一个地址：**
+**路径匹配说明：**
 
-一个 Handler 可以处理多种回调类型（消息路由、用户状态、审核结果等）。如果你希望它们使用相同的回调地址：
+Handler 通过请求路径（`r.URL.Path`）来识别回调类型。默认路径如下：
+- 消息路由: `/message/sync`
+- 用户在线状态: `/user/onlinestatus`
+- 审核结果: `/moderation/audit-result`
+- 聊天室状态: `/chatroom/status`
+- 聊天室 KV: `/chatroom/kv`
+- 用户注销/激活: `/user/deactivation`
 
-1. 代码中只配置一个地址：`http.Handle("/callback", handler)`
-2. 融云后台将所有回调类型都配置为：`https://your-domain.com/callback`
-3. Handler 会根据请求路径自动分发到对应的处理器
+**配置方式：**
 
-**多个回调类型使用不同地址：**
-
-如果你希望每种回调使用独立的地址：
+推荐做法：创建一个 Handler 实例，配置所有需要的回调处理器，然后将其注册到多个路径：
 
 ```go
-// 消息路由回调
-msgHandler := callback.NewHandler(callback.HandlerConfig{
+// 创建一个 Handler，配置所有回调处理器
+handler := callback.NewHandler(callback.HandlerConfig{
     AppSecret: "your-app-secret",
     OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
         // 处理消息
         return nil
     },
-})
-http.Handle("/callback/message", msgHandler)
-
-// 用户在线状态回调
-statusHandler := callback.NewHandler(callback.HandlerConfig{
-    AppSecret: "your-app-secret",
     OnUserOnlineStatus: func(w callback.ResponseWriter, statuses []callback.UserOnlineStatusCallback) error {
-        // 处理状态
+        // 处理用户状态
         return nil
     },
 })
-http.Handle("/callback/online", statusHandler)
+
+// 将同一个 Handler 注册到不同路径
+http.Handle("/message/sync", handler)
+http.Handle("/user/onlinestatus", handler)
 ```
 
 融云后台配置：
-- 消息路由回调地址：`https://your-domain.com/callback/message`
-- 用户在线状态回调地址：`https://your-domain.com/callback/online`
+- 消息路由回调地址：`https://your-domain.com/message/sync`
+- 用户在线状态回调地址：`https://your-domain.com/user/onlinestatus`
 
 ### 自定义回调路径
 
