@@ -68,10 +68,13 @@ type SendGroupReq struct {
 
 // SendChatroomReq 发送聊天室消息请求参数
 type SendChatroomReq struct {
-	FromUserId   string     // 发送人用户 ID
-	ToChatroomId []string   // 接收聊天室 ID
-	ObjectName   ObjectName // 消息类型
-	Content      string     // 消息内容（JSON 字符串）
+	FromUserId      string     // 发送人用户 ID
+	ToChatroomId    []string   // 接收聊天室 ID，建议最多不超过 10 个
+	ObjectName      ObjectName // 消息类型
+	Content         string     // 消息内容（JSON 字符串），最大 128KB
+	IsPersisted     *int       // 是否云端存储：0=不存储，1=存储（默认 1）
+	IsIncludeSender *int       // 是否向发件人同步：0=不同步（默认），1=同步
+	Priority        int        // 消息优先级：1=白名单，2=高优先级，3=低优先级
 }
 
 // SendSystemReq 发送系统消息请求参数

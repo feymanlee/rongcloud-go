@@ -178,6 +178,15 @@ func (a *api) SendChatroom(req *SendChatroomReq) (*SendResp, error) {
 		"objectName":   string(req.ObjectName),
 		"content":      req.Content,
 	}
+	if req.IsPersisted != nil {
+		params["isPersisted"] = strconv.Itoa(*req.IsPersisted)
+	}
+	if req.IsIncludeSender != nil {
+		params["isIncludeSender"] = strconv.Itoa(*req.IsIncludeSender)
+	}
+	if req.Priority != 0 {
+		params["priority"] = strconv.Itoa(req.Priority)
+	}
 	err := a.client.Post(pathChatroomPublish, params, resp)
 	if err != nil {
 		return nil, err
