@@ -116,25 +116,25 @@ type MessageOperationDeleteInfo struct {
 // MessageCallback 消息回调服务（自定义条件消息抄送）
 // 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
 type MessageCallback struct {
-	AppKey         string `json:"appKey"`         // 应用 App Key
-	FromUserId     string `json:"fromUserId"`     // 发送用户 ID
-	TargetId       string `json:"targetId"`       // 目标会话 ID
-	ToUserIds      string `json:"toUserIds"`      // 群成员 ID 列表（逗号分隔）
-	MsgType        string `json:"msgType"`        // 消息类型标识
-	Content        string `json:"content"`        // JSON 结构的消息内容
-	PushContent    string `json:"pushContent"`    // 推送通知栏显示内容
-	DisablePush    bool   `json:"disablePush"`    // 是否为静默消息
-	PushExt        string `json:"pushExt"`        // 推送通知配置
-	Expansion      bool   `json:"expansion"`      // 是否为可扩展消息
-	ExtraContent   string `json:"extraContent"`   // 消息扩展内容（JSON 字符串）
-	ChannelType    string `json:"channelType"`    // 会话类型：PERSON/PERSONS/GROUP/TEMPGROUP/ULTRAGROUP
-	MsgTimeStamp   string `json:"msgTimeStamp"`   // 服务器时间戳（毫秒）
-	MessageId      string `json:"messageId"`      // 消息唯一标识
-	OriginalMsgUID string `json:"originalMsgUID"` // 原始消息 ID（超级群有效）
-	OS             string `json:"os"`             // 消息来源：iOS/Android/HarmonyOS/Websocket/MiniProgram/PC/Server
-	BusChannel     string `json:"busChannel"`     // 超级群频道 ID
-	ClientIp       string `json:"clientIp"`       // 用户 IP 地址及端口
-	AiGenerated    bool   `json:"aiGenerated"`    // 是否为 AI 生成消息
+	AppKey         string `json:"appKey"`         // 必填，应用 App Key
+	FromUserId     string `json:"fromUserId"`     // 必填，发送用户 ID
+	TargetId       string `json:"targetId"`       // 必填，目标会话 ID（单聊为用户 ID，群组为群组 ID）
+	ToUserIds      string `json:"toUserIds"`      // 选填，群成员 ID 列表（逗号分隔），仅群定向消息有效
+	MsgType        string `json:"msgType"`        // 必填，消息类型标识，如 RC:TxtMsg
+	Content        string `json:"content"`        // 必填，JSON 结构的消息内容；支持在回调响应中修改
+	PushContent    string `json:"pushContent"`    // 选填，推送通知栏显示内容；支持在回调响应中修改
+	DisablePush    bool   `json:"disablePush"`    // 选填，是否为静默消息，true 表示不发送离线推送
+	PushExt        string `json:"pushExt"`        // 选填，推送通知配置；支持在回调响应中修改
+	Expansion      bool   `json:"expansion"`      // 选填，是否为可扩展消息，默认 false
+	ExtraContent   string `json:"extraContent"`   // 选填，消息扩展内容（JSON 字符串）；支持在回调响应中修改
+	ChannelType    string `json:"channelType"`    // 必填，会话类型：PERSON/PERSONS/GROUP/TEMPGROUP/ULTRAGROUP
+	MsgTimeStamp   string `json:"msgTimeStamp"`   // 必填，服务器时间戳（毫秒）
+	MessageId      string `json:"messageId"`      // 必填，消息唯一标识
+	OriginalMsgUID string `json:"originalMsgUID"` // 选填，原始消息 ID，仅超级群修改消息时有效
+	OS             string `json:"os"`             // 必填，消息来源：iOS/Android/HarmonyOS/Websocket/MiniProgram/PC/Server
+	BusChannel     string `json:"busChannel"`     // 选填，超级群频道 ID
+	ClientIp       string `json:"clientIp"`       // 必填，用户 IP 地址及端口，格式：IP:port
+	AiGenerated    bool   `json:"aiGenerated"`    // 选填，是否为 AI 生成消息，需提工单开启
 }
 
 // BotMessageCallback 机器人消息回调
