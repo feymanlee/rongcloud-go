@@ -47,6 +47,9 @@ type HandlerConfig struct {
 	ChatroomStatusPath   string // 聊天室状态回调路径，默认 DefaultChatroomStatusPath
 	ChatroomKVPath       string // 聊天室 KV 回调路径，默认 DefaultChatroomKVPath
 	UserDeactivationPath string // 用户注销/激活回调路径，默认 DefaultUserDeactivationPath
+	MessageOperationPath string // 消息操作状态同步回调路径，默认 DefaultMessageOperationPath
+	MessageCallbackPath  string // 消息回调服务路径，默认 DefaultMessageCallbackPath
+	BotMessagePath       string // 机器人消息回调路径，默认 DefaultBotMessagePath
 
 	// 回调处理器 - 可以通过 ResponseWriter 自定义响应
 	// 返回 error 时，如果没有调用 WriteResponse，会返回 500 错误
@@ -56,6 +59,9 @@ type HandlerConfig struct {
 	OnChatroomStatus   func(w ResponseWriter, status ChatroomStatusCallback) error
 	OnChatroomKV       func(w ResponseWriter, kv ChatroomKVCallback) error
 	OnUserDeactivation func(w ResponseWriter, deactivation UserDeactivationCallback) error
+	OnMessageOperation func(w ResponseWriter, operation MessageOperationCallback) error
+	OnMessageCallback  func(w ResponseWriter, msg MessageCallbackService) error
+	OnBotMessage       func(w ResponseWriter, msg BotMessageCallback) error
 }
 
 // Handler 融云回调 HTTP 处理器
@@ -85,14 +91,23 @@ func NewHandler(appSecret string, config HandlerConfig) *Handler {
 	if config.UserDeactivationPath == "" {
 		config.UserDeactivationPath = DefaultUserDeactivationPath
 	}
+	if config.MessageOperationPath == "" {
+		config.MessageOperationPath = DefaultMessageOperationPath
+	}
+	if config.MessageCallbackPath == "" {
+		config.MessageCallbackPath = DefaultMessageCallbackPath
+	}
+	if config.BotMessagePath == "" {
+		config.BotMessagePath = DefaultBotMessagePath
+	}
 	return &Handler{appSecret: appSecret, config: config}
 }
 
 // ServeHTTP 实现 http.Handler 接口
 // 根据请求路径分发到不同的回调处理器
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 对于消息路由回调，appKey 在请求体中，需要先解析表单
-	if r.URL.Path == h.config.MessageRoutePath {
+	// 对于消息路由回调和消息回调服务，appKey 在请求体中，需要先解析表单
+	if r.URL.Path == h.config.MessageRoutePath || r.URL.Path == h.config.MessageCallbackPath {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -121,6 +136,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.handleChatroomKV(rw, r)
 	case h.config.UserDeactivationPath:
 		h.handleUserDeactivation(rw, r)
+	case h.config.MessageOperationPath:
+		h.handleMessageOperation(rw, r)
+	case h.config.MessageCallbackPath:
+		h.handleMessageCallback(rw, r)
+	case h.config.BotMessagePath:
+		h.handleBotMessage(rw, r)
 	default:
 		http.Error(w, "Not found", http.StatusNotFound)
 	}
@@ -267,5 +288,87 @@ func (h *Handler) handleUserDeactivation(rw *responseWriter, r *http.Request) {
 	}
 
 	err := h.config.OnUserDeactivation(rw, callback)
+	writeDefaultResponse(rw, err)
+}
+
+// handleMessageOperation 处理消息操作状态同步回调（消息撤回/删除）
+func (h *Handler) handleMessageOperation(rw *responseWriter, r *http.Request) {
+	if h.config.OnMessageOperation == nil {
+		http.Error(rw, "Handler not configured", http.StatusInternalServerError)
+		return
+	}
+
+	var callback MessageOperationCallback
+	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+		http.Error(rw, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	err := h.config.OnMessageOperation(rw, callback)
+	writeDefaultResponse(rw, err)
+}
+
+// handleMessageCallback 处理消息回调服务
+// 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
+func (h *Handler) handleMessageCallback(rw *responseWriter, r *http.Request) {
+	if h.config.OnMessageCallback == nil {
+		http.Error(rw, "Handler not configured", http.StatusInternalServerError)
+		return
+	}
+
+	// ServeHTTP 中已经调用过 ParseForm 来提取 appKey 验证签名
+	if err := r.ParseForm(); err != nil {
+		http.Error(rw, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	callback := MessageCallbackService{
+		AppKey:         r.FormValue("appKey"),
+		FromUserId:     r.FormValue("fromUserId"),
+		TargetId:       r.FormValue("targetId"),
+		ToUserIds:      r.FormValue("toUserIds"),
+		MsgType:        r.FormValue("msgType"),
+		Content:        r.FormValue("content"),
+		PushContent:    r.FormValue("pushContent"),
+		PushExt:        r.FormValue("pushExt"),
+		ExtraContent:   r.FormValue("extraContent"),
+		ChannelType:    r.FormValue("channelType"),
+		MsgTimeStamp:   r.FormValue("msgTimeStamp"),
+		MessageId:      r.FormValue("messageId"),
+		OriginalMsgUID: r.FormValue("originalMsgUID"),
+		OS:             r.FormValue("os"),
+		BusChannel:     r.FormValue("busChannel"),
+		ClientIp:       r.FormValue("clientIp"),
+	}
+
+	// 解析可选字段
+	if v := r.FormValue("disablePush"); v == "true" {
+		callback.DisablePush = true
+	}
+	if v := r.FormValue("expansion"); v == "true" {
+		callback.Expansion = true
+	}
+	if v := r.FormValue("aiGenerated"); v == "true" {
+		callback.AiGenerated = true
+	}
+
+	err := h.config.OnMessageCallback(rw, callback)
+	writeDefaultResponse(rw, err)
+}
+
+// handleBotMessage 处理机器人消息回调
+func (h *Handler) handleBotMessage(rw *responseWriter, r *http.Request) {
+	if h.config.OnBotMessage == nil {
+		http.Error(rw, "Handler not configured", http.StatusInternalServerError)
+		return
+	}
+
+	var callback BotMessageCallback
+	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+		http.Error(rw, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	err := h.config.OnBotMessage(rw, callback)
 	writeDefaultResponse(rw, err)
 }

@@ -7,11 +7,14 @@
 - **签名验证**: 支持融云回调请求的 SHA1 签名验证
 - **回调类型支持**:
   - 消息路由回调（全量消息路由）- `application/x-www-form-urlencoded`
+  - 消息回调服务（自定义条件消息抄送）- `application/x-www-form-urlencoded`
   - 用户在线状态回调 - `application/json` (数组)
   - 消息审核结果回调 - `application/json`
   - 聊天室状态回调 - `application/json`
   - 聊天室 KV 属性回调 - `application/json`
   - 用户注销/激活回调 - `application/json`
+  - 消息操作状态同步回调（撤回/删除）- `application/json`
+  - 机器人消息回调 - `application/json`
 - **自定义回调路径**: 支持配置自定义回调 URL 路径
 - **自定义响应**: 支持在回调处理器中自定义 HTTP 响应
 - **IP 白名单**: 内置融云回调服务器 IP 白名单
@@ -130,6 +133,9 @@ const (
     DefaultChatroomStatusPath   = "/chatroom/status"
     DefaultChatroomKVPath       = "/chatroom/kv"
     DefaultUserDeactivationPath = "/user/deactivation"
+    DefaultMessageOperationPath = "/message/operation"
+    DefaultMessageCallbackPath  = "/message/callback"
+    DefaultBotMessagePath       = "/bot/message"
 )
 ```
 
@@ -156,6 +162,9 @@ Handler 通过请求路径（`r.URL.Path`）来识别回调类型。默认路径
 - 聊天室状态: `/chatroom/status`
 - 聊天室 KV: `/chatroom/kv`
 - 用户注销/激活: `/user/deactivation`
+- 消息操作状态: `/message/operation`
+- 消息回调服务: `/message/callback`
+- 机器人消息: `/bot/message`
 
 ## 自定义回调路径
 
@@ -166,6 +175,9 @@ callbackAPI.SetHandlerConfig(callback.HandlerConfig{
     MessageRoutePath:     "/api/callback/message",      // 自定义消息路由路径
     UserOnlineStatusPath: "/api/callback/online",       // 自定义在线状态路径
     AuditResultPath:      "/api/callback/audit",        // 自定义审核结果路径
+    MessageOperationPath: "/api/callback/operation",    // 自定义消息操作路径
+    MessageCallbackPath:  "/api/callback/msgcb",        // 自定义消息回调服务路径
+    BotMessagePath:       "/api/callback/bot",          // 自定义机器人消息路径
     OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
         // 处理消息
         return nil
@@ -284,6 +296,78 @@ type UserDeactivationCallback struct {
     Type   int    // 0=注销，1=激活
     Time   int64  // 发生时间（毫秒）
 }
+
+// 消息操作状态同步回调（消息撤回/删除）
+type MessageOperationCallback struct {
+    EventType        int                           // 事件类型：1=消息撤回，2=消息删除
+    FromUserId       string                        // 操作人用户 ID
+    OptTime          int64                         // 操作时间戳（毫秒）
+    Source           string                        // 操作来源
+    ConversationInfo MessageOperationConversation  // 会话信息
+    OriginalMsgInfo  MessageOperationOriginalMsg   // 原始消息信息
+    RecallMsgInfo    *MessageOperationRecallInfo   // 撤回消息特有信息
+    DeleteMsgInfo    *MessageOperationDeleteInfo   // 删除消息特有信息
+}
+
+// 消息回调服务
+// 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
+type MessageCallbackService struct {
+    AppKey         string // 应用 App Key
+    FromUserId     string // 发送用户 ID
+    TargetId       string // 目标会话 ID
+    ToUserIds      string // 群成员 ID 列表（逗号分隔）
+    MsgType        string // 消息类型标识
+    Content        string // JSON 结构的消息内容
+    PushContent    string // 推送通知栏显示内容
+    DisablePush    bool   // 是否为静默消息
+    PushExt        string // 推送通知配置
+    Expansion      bool   // 是否为可扩展消息
+    ExtraContent   string // 消息扩展内容（JSON 字符串）
+    ChannelType    string // 会话类型
+    MsgTimeStamp   string // 服务器时间戳（毫秒）
+    MessageId      string // 消息唯一标识
+    OriginalMsgUID string // 原始消息 ID（超级群有效）
+    OS             string // 消息来源
+    BusChannel     string // 超级群频道 ID
+    ClientIp       string // 用户 IP 地址及端口
+    AiGenerated    bool   // 是否为 AI 生成消息
+}
+
+// 机器人消息回调
+type BotMessageCallback struct {
+    Type      string                 // 回调事件类型
+    Timestamp int64                  // 触发时间（Unix 毫秒）
+    Bot       BotInfo                // 机器人信息
+    Data      map[string]interface{} // 事件特定数据
+}
+
+type BotInfo struct {
+    UserId     string                 // 机器人用户 ID
+    Name       string                 // 机器人名称
+    ProfileUrl string                 // 机器人头像 URL
+    Type       string                 // 机器人类型
+    Metadata   map[string]interface{} // 机器人元数据
+}
+```
+
+### 机器人消息事件类型
+
+```go
+const (
+    // 消息事件
+    BotEventMessagePrivate              = "message:private"                // 私聊消息
+    BotEventMessageGroupMentioned       = "message:group_mentioned"        // 群组@消息
+    BotEventMessagePrivateRecall        = "message:private_recall"         // 私聊消息撤回
+    BotEventMessageGroupMentionedRecall = "message:group_mentioned_recall" // 群组@消息撤回
+    BotEventMessagePrivateRead          = "message:private_read"           // 私聊已读回执
+    BotEventMessageGroupRead            = "message:group_read"             // 群组已读回执
+    // 群组事件
+    BotEventGroupBotJoin  = "group:bot_join"  // 机器人被加入群组
+    BotEventGroupBotLeft  = "group:bot_left"  // 机器人被移出群组
+    BotEventGroupDismiss  = "group:dismiss"   // 群组解散
+    BotEventGroupUserJoin = "group:user_join" // 其他用户加入群组
+    BotEventGroupUserLeft = "group:user_left" // 其他用户离开群组
+)
 ```
 
 ## API 参考
@@ -313,6 +397,9 @@ type HandlerConfig struct {
     ChatroomStatusPath   string // 聊天室状态回调路径，默认 DefaultChatroomStatusPath
     ChatroomKVPath       string // 聊天室 KV 回调路径，默认 DefaultChatroomKVPath
     UserDeactivationPath string // 用户注销/激活回调路径，默认 DefaultUserDeactivationPath
+    MessageOperationPath string // 消息操作状态同步回调路径，默认 DefaultMessageOperationPath
+    MessageCallbackPath  string // 消息回调服务路径，默认 DefaultMessageCallbackPath
+    BotMessagePath       string // 机器人消息回调路径，默认 DefaultBotMessagePath
 
     // 回调处理器 - 可以通过 ResponseWriter 自定义响应
     OnMessageRoute       func(ResponseWriter, MessageRouteCallback) error
@@ -321,6 +408,9 @@ type HandlerConfig struct {
     OnChatroomStatus     func(ResponseWriter, ChatroomStatusCallback) error
     OnChatroomKV         func(ResponseWriter, ChatroomKVCallback) error
     OnUserDeactivation   func(ResponseWriter, UserDeactivationCallback) error
+    OnMessageOperation   func(ResponseWriter, MessageOperationCallback) error
+    OnMessageCallback    func(ResponseWriter, MessageCallbackService) error
+    OnBotMessage         func(ResponseWriter, BotMessageCallback) error
 }
 ```
 

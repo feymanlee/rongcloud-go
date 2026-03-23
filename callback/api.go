@@ -15,6 +15,12 @@ const (
 	DefaultChatroomKVPath = "/chatroom/kv"
 	// DefaultUserDeactivationPath 用户注销/激活回调默认路径
 	DefaultUserDeactivationPath = "/user/deactivation"
+	// DefaultMessageOperationPath 消息操作状态同步回调默认路径
+	DefaultMessageOperationPath = "/message/operation"
+	// DefaultMessageCallbackPath 消息回调服务默认路径
+	DefaultMessageCallbackPath = "/message/callback"
+	// DefaultBotMessagePath 机器人消息回调默认路径
+	DefaultBotMessagePath = "/bot/message"
 )
 
 // API 回调处理接口

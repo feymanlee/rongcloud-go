@@ -75,6 +75,102 @@ type UserDeactivationCallback struct {
 	Time   int64  `json:"time"`   // 发生时间（毫秒）
 }
 
+// MessageOperationCallback 消息操作状态同步回调（消息撤回/删除）
+type MessageOperationCallback struct {
+	EventType        int                           `json:"eventType"`        // 事件类型：1=消息撤回，2=消息删除
+	FromUserId       string                        `json:"fromUserId"`       // 操作人用户 ID
+	OptTime          int64                         `json:"optTime"`          // 操作时间戳（毫秒）
+	Source           string                        `json:"source"`           // 操作来源：Android、iOS、WebSocket、Server 等
+	ConversationInfo MessageOperationConversation  `json:"conversationInfo"` // 会话信息
+	OriginalMsgInfo  MessageOperationOriginalMsg   `json:"originalMsgInfo"`  // 原始消息信息
+	RecallMsgInfo    *MessageOperationRecallInfo   `json:"recallMsgInfo,omitempty"`   // 撤回消息特有信息（eventType=1时）
+	DeleteMsgInfo    *MessageOperationDeleteInfo   `json:"deleteMsgInfo,omitempty"`   // 删除消息特有信息（eventType=2时）
+}
+
+// MessageOperationConversation 消息操作回调中的会话信息
+type MessageOperationConversation struct {
+	ConversationType int    `json:"conversationType"` // 会话类型
+	TargetId         string `json:"targetId"`         // 会话 ID
+	BusChannel       string `json:"busChannel"`       // 频道 ID（可选）
+}
+
+// MessageOperationOriginalMsg 消息操作回调中的原始消息信息
+type MessageOperationOriginalMsg struct {
+	MessageId    string `json:"messageId"`    // 原始消息 ID
+	MessageTime  int64  `json:"messageTime"`  // 原始消息时间
+}
+
+// MessageOperationRecallInfo 消息撤回特有信息
+type MessageOperationRecallInfo struct {
+	IsDelete int    `json:"isDelete"` // 接收方是否本地删除：0=否，1=是
+	IsAdmin  int    `json:"isAdmin"`  // 是否管理员操作：0=否，1=是
+	Extra    string `json:"extra"`    // 扩展信息
+}
+
+// MessageOperationDeleteInfo 消息删除特有信息
+type MessageOperationDeleteInfo struct {
+	DeleteType   int   `json:"deleteType"`   // 删除类型：1=指定消息删除，2=按时间戳删除
+	MsgTimestamp int64 `json:"msgTimestamp"` // 时间戳（deleteType=2时有效）
+}
+
+// MessageCallbackService 消息回调服务（自定义条件消息抄送）
+// 注意：此回调使用 application/x-www-form-urlencoded 格式，且 appKey 在请求体中
+type MessageCallbackService struct {
+	AppKey         string `json:"appKey"`         // 应用 App Key
+	FromUserId     string `json:"fromUserId"`     // 发送用户 ID
+	TargetId       string `json:"targetId"`       // 目标会话 ID
+	ToUserIds      string `json:"toUserIds"`      // 群成员 ID 列表（逗号分隔）
+	MsgType        string `json:"msgType"`        // 消息类型标识
+	Content        string `json:"content"`        // JSON 结构的消息内容
+	PushContent    string `json:"pushContent"`    // 推送通知栏显示内容
+	DisablePush    bool   `json:"disablePush"`    // 是否为静默消息
+	PushExt        string `json:"pushExt"`        // 推送通知配置
+	Expansion      bool   `json:"expansion"`      // 是否为可扩展消息
+	ExtraContent   string `json:"extraContent"`   // 消息扩展内容（JSON 字符串）
+	ChannelType    string `json:"channelType"`    // 会话类型：PERSON/PERSONS/GROUP/TEMPGROUP/ULTRAGROUP
+	MsgTimeStamp   string `json:"msgTimeStamp"`   // 服务器时间戳（毫秒）
+	MessageId      string `json:"messageId"`      // 消息唯一标识
+	OriginalMsgUID string `json:"originalMsgUID"` // 原始消息 ID（超级群有效）
+	OS             string `json:"os"`             // 消息来源：iOS/Android/HarmonyOS/Websocket/MiniProgram/PC/Server
+	BusChannel     string `json:"busChannel"`     // 超级群频道 ID
+	ClientIp       string `json:"clientIp"`       // 用户 IP 地址及端口
+	AiGenerated    bool   `json:"aiGenerated"`    // 是否为 AI 生成消息
+}
+
+// BotMessageCallback 机器人消息回调
+type BotMessageCallback struct {
+	Type      string                 `json:"type"`      // 回调事件类型
+	Timestamp int64                  `json:"timestamp"` // 触发时间（Unix 毫秒）
+	Bot       BotInfo                `json:"bot"`       // 机器人信息
+	Data      map[string]interface{} `json:"data"`      // 事件特定数据
+}
+
+// BotInfo 机器人信息
+type BotInfo struct {
+	UserId      string                 `json:"userId"`      // 机器人用户 ID
+	Name        string                 `json:"name"`        // 机器人名称
+	ProfileUrl  string                 `json:"profileUrl"`  // 机器人头像 URL
+	Type        string                 `json:"type"`        // 机器人类型
+	Metadata    map[string]interface{} `json:"metadata"`    // 机器人元数据
+}
+
+// 机器人消息事件类型常量
+const (
+	// 消息事件
+	BotEventMessagePrivate              = "message:private"               // 私聊消息
+	BotEventMessageGroupMentioned       = "message:group_mentioned"       // 群组@消息
+	BotEventMessagePrivateRecall        = "message:private_recall"        // 私聊消息撤回
+	BotEventMessageGroupMentionedRecall = "message:group_mentioned_recall" // 群组@消息撤回
+	BotEventMessagePrivateRead          = "message:private_read"          // 私聊已读回执
+	BotEventMessageGroupRead            = "message:group_read"            // 群组已读回执
+	// 群组事件
+	BotEventGroupBotJoin   = "group:bot_join"   // 机器人被加入群组
+	BotEventGroupBotLeft   = "group:bot_left"   // 机器人被移出群组
+	BotEventGroupDismiss   = "group:dismiss"    // 群组解散
+	BotEventGroupUserJoin  = "group:user_join"  // 其他用户加入群组
+	BotEventGroupUserLeft  = "group:user_left"  // 其他用户离开群组
+)
+
 // CallbackParams 从请求中提取的回调参数
 type CallbackParams struct {
 	AppKey    string // 应用和环境的 App Key
