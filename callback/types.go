@@ -171,6 +171,15 @@ const (
 	BotEventGroupUserLeft  = "group:user_left"  // 其他用户离开群组
 )
 
+// 会话类型常量 (channelType)
+const (
+	ChannelTypePerson     = "PERSON"     // 二人会话（单聊）
+	ChannelTypePersons    = "PERSONS"    // 讨论组会话
+	ChannelTypeGroup      = "GROUP"      // 群组会话
+	ChannelTypeTempGroup  = "TEMPGROUP"  // 聊天室会话
+	ChannelTypeUltraGroup = "ULTRAGROUP" // 超级群会话
+)
+
 // CallbackParams 从请求中提取的回调参数
 type CallbackParams struct {
 	AppKey    string // 应用和环境的 App Key
