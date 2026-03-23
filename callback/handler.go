@@ -40,15 +40,13 @@ func (w *responseWriter) Header() http.Header {
 
 // HandlerConfig 回调处理器配置
 type HandlerConfig struct {
-	AppSecret string // 应用密钥，用于验证签名
-
 	// 自定义回调路径（可选，默认使用标准路径）
-	MessageRoutePath     string // 消息路由回调路径，默认 "/message/sync"
-	UserOnlineStatusPath string // 用户在线状态回调路径，默认 "/user/onlinestatus"
-	AuditResultPath      string // 审核结果回调路径，默认 "/moderation/audit-result"
-	ChatroomStatusPath   string // 聊天室状态回调路径，默认 "/chatroom/status"
-	ChatroomKVPath       string // 聊天室 KV 回调路径，默认 "/chatroom/kv"
-	UserDeactivationPath string // 用户注销/激活回调路径，默认 "/user/deactivation"
+	MessageRoutePath     string // 消息路由回调路径，默认 DefaultMessageRoutePath
+	UserOnlineStatusPath string // 用户在线状态回调路径，默认 DefaultUserOnlineStatusPath
+	AuditResultPath      string // 审核结果回调路径，默认 DefaultAuditResultPath
+	ChatroomStatusPath   string // 聊天室状态回调路径，默认 DefaultChatroomStatusPath
+	ChatroomKVPath       string // 聊天室 KV 回调路径，默认 DefaultChatroomKVPath
+	UserDeactivationPath string // 用户注销/激活回调路径，默认 DefaultUserDeactivationPath
 
 	// 回调处理器 - 可以通过 ResponseWriter 自定义响应
 	// 返回 error 时，如果没有调用 WriteResponse，会返回 500 错误
@@ -62,31 +60,32 @@ type HandlerConfig struct {
 
 // Handler 融云回调 HTTP 处理器
 type Handler struct {
-	config HandlerConfig
+	appSecret string
+	config    HandlerConfig
 }
 
 // NewHandler 创建回调处理器
-func NewHandler(config HandlerConfig) *Handler {
+func NewHandler(appSecret string, config HandlerConfig) *Handler {
 	// 设置默认路径
 	if config.MessageRoutePath == "" {
-		config.MessageRoutePath = "/message/sync"
+		config.MessageRoutePath = DefaultMessageRoutePath
 	}
 	if config.UserOnlineStatusPath == "" {
-		config.UserOnlineStatusPath = "/user/onlinestatus"
+		config.UserOnlineStatusPath = DefaultUserOnlineStatusPath
 	}
 	if config.AuditResultPath == "" {
-		config.AuditResultPath = "/moderation/audit-result"
+		config.AuditResultPath = DefaultAuditResultPath
 	}
 	if config.ChatroomStatusPath == "" {
-		config.ChatroomStatusPath = "/chatroom/status"
+		config.ChatroomStatusPath = DefaultChatroomStatusPath
 	}
 	if config.ChatroomKVPath == "" {
-		config.ChatroomKVPath = "/chatroom/kv"
+		config.ChatroomKVPath = DefaultChatroomKVPath
 	}
 	if config.UserDeactivationPath == "" {
-		config.UserDeactivationPath = "/user/deactivation"
+		config.UserDeactivationPath = DefaultUserDeactivationPath
 	}
-	return &Handler{config: config}
+	return &Handler{appSecret: appSecret, config: config}
 }
 
 // ServeHTTP 实现 http.Handler 接口
@@ -101,7 +100,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 验证签名
-	if !VerifyRequest(r, h.config.AppSecret) {
+	if !VerifyRequest(r, h.appSecret) {
 		http.Error(w, "Invalid signature", http.StatusUnauthorized)
 		return
 	}

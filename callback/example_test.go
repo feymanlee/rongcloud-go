@@ -24,8 +24,7 @@ func ExampleVerifyCallback() {
 
 // ExampleHandler 演示如何使用 Handler 处理回调
 func ExampleHandler() {
-	handler := callback.NewHandler(callback.HandlerConfig{
-		AppSecret: "your-app-secret",
+	handler := callback.NewHandler("your-app-secret", callback.HandlerConfig{
 		OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
 			log.Printf("收到消息: from=%s, to=%s, type=%s\n",
 				msg.FromUserId, msg.ToUserId, msg.ObjectName)

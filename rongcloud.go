@@ -3,6 +3,7 @@ package rongcloud
 import (
 	"sync"
 
+	"github.com/feymanlee/rongcloud-go/callback"
 	"github.com/feymanlee/rongcloud-go/chatroom"
 	"github.com/feymanlee/rongcloud-go/chatroom_block"
 	"github.com/feymanlee/rongcloud-go/chatroom_kv"
@@ -91,6 +92,8 @@ type RC interface {
 	Notification() notification.API
 	// PushPeriod 推送免打扰时段
 	PushPeriod() pushperiod.API
+	// Callback 回调服务
+	Callback() callback.API
 }
 
 // Options 创建 RC 实例的选项
@@ -99,12 +102,14 @@ type Options = core.Options
 // NewRC 创建融云 IM 服务端 SDK 实例
 func NewRC(opt *Options) RC {
 	return &rc{
-		client: core.NewClient(opt),
+		client:    core.NewClient(opt),
+		appSecret: opt.AppSecret,
 	}
 }
 
 type rc struct {
-	client core.Client
+	client    core.Client
+	appSecret string
 
 	user struct {
 		once     sync.Once
@@ -197,6 +202,10 @@ type rc struct {
 	pushPeriod struct {
 		once     sync.Once
 		instance pushperiod.API
+	}
+	cb struct {
+		once     sync.Once
+		instance callback.API
 	}
 }
 
@@ -359,4 +368,11 @@ func (r *rc) PushPeriod() pushperiod.API {
 		r.pushPeriod.instance = pushperiod.NewAPI(r.client)
 	})
 	return r.pushPeriod.instance
+}
+
+func (r *rc) Callback() callback.API {
+	r.cb.once.Do(func() {
+		r.cb.instance = callback.NewAPI(r.client, r.appSecret)
+	})
+	return r.cb.instance
 }

@@ -42,7 +42,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 				"msgUID":       []string{"msg-uid-123"},
 			}.Encode(),
 			handlerConfig: HandlerConfig{
-				AppSecret: appSecret,
 				OnMessageRoute: func(w ResponseWriter, msg MessageRouteCallback) error {
 					if msg.FromUserId != "user1" {
 						t.Errorf("expected FromUserId=user1, got %s", msg.FromUserId)
@@ -61,7 +60,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			signature:   validSig,
 			body:        url.Values{"fromUserId": []string{"user1"}}.Encode(),
 			handlerConfig: HandlerConfig{
-				AppSecret: appSecret,
 				OnMessageRoute: func(w ResponseWriter, msg MessageRouteCallback) error {
 					w.WriteResponse(201, "Created")
 					return nil
@@ -77,7 +75,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			signature:   validSig,
 			body:        url.Values{"fromUserId": []string{"user1"}}.Encode(),
 			handlerConfig: HandlerConfig{
-				AppSecret:        appSecret,
 				MessageRoutePath: "/my/custom/path",
 				OnMessageRoute: func(w ResponseWriter, msg MessageRouteCallback) error {
 					return nil
@@ -93,7 +90,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			signature:   "invalid-sig",
 			body:        "fromUserId=user1",
 			handlerConfig: HandlerConfig{
-				AppSecret: appSecret,
 			},
 			expectedStatus: http.StatusUnauthorized,
 		},
@@ -104,7 +100,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			signature:   validSig,
 			body:        "fromUserId=user1",
 			handlerConfig: HandlerConfig{
-				AppSecret: appSecret,
 				OnMessageRoute: func(w ResponseWriter, msg MessageRouteCallback) error {
 					return errors.New("handler error")
 				},
@@ -118,7 +113,6 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			signature:   validSig,
 			body:        "fromUserId=user1",
 			handlerConfig: HandlerConfig{
-				AppSecret: appSecret,
 				OnMessageRoute: func(w ResponseWriter, msg MessageRouteCallback) error {
 					w.WriteResponse(400, "Bad Request")
 					return errors.New("some error") // 这个错误会被忽略，因为已经写了响应
@@ -136,7 +130,7 @@ func TestHandler_ServeHTTP_MessageRoute(t *testing.T) {
 			req.Header.Set("Content-Type", tt.contentType)
 
 			rec := httptest.NewRecorder()
-			handler := NewHandler(tt.handlerConfig)
+			handler := NewHandler(appSecret, tt.handlerConfig)
 			handler.ServeHTTP(rec, req)
 
 			if rec.Code != tt.expectedStatus {
@@ -158,7 +152,6 @@ func TestHandler_ServeHTTP_UserOnlineStatus(t *testing.T) {
 	var receivedCallbacks []UserOnlineStatusCallback
 
 	config := HandlerConfig{
-		AppSecret: appSecret,
 		OnUserOnlineStatus: func(w ResponseWriter, statuses []UserOnlineStatusCallback) error {
 			receivedCallbacks = statuses
 			return nil
@@ -182,7 +175,7 @@ func TestHandler_ServeHTTP_UserOnlineStatus(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	handler := NewHandler(config)
+	handler := NewHandler(appSecret, config)
 	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
@@ -205,7 +198,6 @@ func TestHandler_ServeHTTP_AuditResult(t *testing.T) {
 	validSig := sha1Sum(appSecret + nonce + timestamp)
 
 	config := HandlerConfig{
-		AppSecret: appSecret,
 		OnAuditResult: func(w ResponseWriter, result AuditResultCallback) error {
 			// 自定义响应
 			w.WriteResponse(200, `{"status":"received"}`)
@@ -227,7 +219,7 @@ func TestHandler_ServeHTTP_AuditResult(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	handler := NewHandler(config)
+	handler := NewHandler(appSecret, config)
 	handler.ServeHTTP(rec, req)
 
 	if rec.Code != 200 {
@@ -246,7 +238,6 @@ func TestHandler_ServeHTTP_NotFound(t *testing.T) {
 	validSig := sha1Sum(appSecret + nonce + timestamp)
 
 	config := HandlerConfig{
-		AppSecret: appSecret,
 		// 没有配置任何处理器，使用默认路径
 	}
 
@@ -254,7 +245,7 @@ func TestHandler_ServeHTTP_NotFound(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, url, nil)
 
 	rec := httptest.NewRecorder()
-	handler := NewHandler(config)
+	handler := NewHandler(appSecret, config)
 	handler.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
@@ -264,10 +255,8 @@ func TestHandler_ServeHTTP_NotFound(t *testing.T) {
 
 func TestHandler_DefaultPaths(t *testing.T) {
 	// 测试默认路径是否正确设置
-	config := HandlerConfig{
-		AppSecret: "test",
-	}
-	handler := NewHandler(config)
+	config := HandlerConfig{}
+	handler := NewHandler("test-secret", config)
 
 	if handler.config.MessageRoutePath != "/message/sync" {
 		t.Errorf("default MessageRoutePath = %s, want /message/sync", handler.config.MessageRoutePath)

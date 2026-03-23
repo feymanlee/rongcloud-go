@@ -41,7 +41,7 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-### 使用 Handler 包装器
+### 通过 RC 使用回调服务（推荐）
 
 ```go
 package main
@@ -49,12 +49,22 @@ package main
 import (
     "log"
     "net/http"
-    "github.com/feymanlee/rongcloud-go/callback"
+    "github.com/feymanlee/rongcloud-go"
 )
 
 func main() {
-    handler := callback.NewHandler(callback.HandlerConfig{
+    // 创建 RC 实例
+    rc := rongcloud.NewRC(&rongcloud.Options{
+        AppKey:    "your-app-key",
         AppSecret: "your-app-secret",
+        Region:    rongcloud.RegionBeijing,
+    })
+
+    // 获取 callback API
+    callbackAPI := rc.Callback()
+
+    // 设置回调处理器
+    callbackAPI.SetHandlerConfig(callback.HandlerConfig{
         OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
             log.Printf("收到消息: from=%s, to=%s, type=%s",
                 msg.FromUserId, msg.ToUserId, msg.ObjectName)
@@ -69,16 +79,63 @@ func main() {
         },
     })
 
-    // 将同一个 Handler 注册到多个路径（与融云后台配置的路径对应）
+    // 获取 Handler 并注册到 HTTP 服务器
+    http.Handle("/message/sync", callbackAPI.Handler())
+    http.Handle("/user/onlinestatus", callbackAPI.Handler())
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+### 直接使用 Handler（无需 RC）
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+    "github.com/feymanlee/rongcloud-go/callback"
+)
+
+func main() {
+    handler := callback.NewHandler("your-app-secret", callback.HandlerConfig{
+        OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
+            log.Printf("收到消息: from=%s, to=%s, type=%s",
+                msg.FromUserId, msg.ToUserId, msg.ObjectName)
+            return nil
+        },
+        OnUserOnlineStatus: func(w callback.ResponseWriter, statuses []callback.UserOnlineStatusCallback) error {
+            for _, status := range statuses {
+                log.Printf("用户状态: user=%s, status=%s, os=%s",
+                    status.UserID, status.Status, status.OS)
+            }
+            return nil
+        },
+    })
+
+    // 将 Handler 注册到 HTTP 服务器
     http.Handle("/message/sync", handler)
     http.Handle("/user/onlinestatus", handler)
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
 ```
 
-**融云后台配置说明：**
+## 路径常量
 
-上面的代码将 Handler 注册到了 `/message/sync` 和 `/user/onlinestatus` 路径。在融云控制台配置回调地址时，需要填写完整的 URL：
+```go
+const (
+    DefaultMessageRoutePath     = "/message/sync"
+    DefaultUserOnlineStatusPath = "/user/onlinestatus"
+    DefaultAuditResultPath      = "/moderation/audit-result"
+    DefaultChatroomStatusPath   = "/chatroom/status"
+    DefaultChatroomKVPath       = "/chatroom/kv"
+    DefaultUserDeactivationPath = "/user/deactivation"
+)
+```
+
+## 融云后台配置说明
+
+代码将 Handler 注册到了默认路径。在融云控制台配置回调地址时，需要填写完整的 URL：
 
 ```
 https://your-domain.com/message/sync
@@ -90,7 +147,7 @@ https://your-domain.com/user/onlinestatus
 - 代码中注册的路径是 `/message/sync`
 - 那么融云后台消息路由回调应该配置为：`https://api.example.com/message/sync`
 
-**路径匹配说明：**
+## 路径匹配说明
 
 Handler 通过请求路径（`r.URL.Path`）来识别回调类型。默认路径如下：
 - 消息路由: `/message/sync`
@@ -100,40 +157,12 @@ Handler 通过请求路径（`r.URL.Path`）来识别回调类型。默认路径
 - 聊天室 KV: `/chatroom/kv`
 - 用户注销/激活: `/user/deactivation`
 
-**配置方式：**
-
-推荐做法：创建一个 Handler 实例，配置所有需要的回调处理器，然后将其注册到多个路径：
-
-```go
-// 创建一个 Handler，配置所有回调处理器
-handler := callback.NewHandler(callback.HandlerConfig{
-    AppSecret: "your-app-secret",
-    OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
-        // 处理消息
-        return nil
-    },
-    OnUserOnlineStatus: func(w callback.ResponseWriter, statuses []callback.UserOnlineStatusCallback) error {
-        // 处理用户状态
-        return nil
-    },
-})
-
-// 将同一个 Handler 注册到不同路径
-http.Handle("/message/sync", handler)
-http.Handle("/user/onlinestatus", handler)
-```
-
-融云后台配置：
-- 消息路由回调地址：`https://your-domain.com/message/sync`
-- 用户在线状态回调地址：`https://your-domain.com/user/onlinestatus`
-
-### 自定义回调路径
+## 自定义回调路径
 
 融云控制台允许自定义回调地址，可在配置中指定：
 
 ```go
-handler := callback.NewHandler(callback.HandlerConfig{
-    AppSecret:            "your-app-secret",
+callbackAPI.SetHandlerConfig(callback.HandlerConfig{
     MessageRoutePath:     "/api/callback/message",      // 自定义消息路由路径
     UserOnlineStatusPath: "/api/callback/online",       // 自定义在线状态路径
     AuditResultPath:      "/api/callback/audit",        // 自定义审核结果路径
@@ -144,21 +173,12 @@ handler := callback.NewHandler(callback.HandlerConfig{
 })
 ```
 
-**默认路径：**
-- 消息路由: `/message/sync`
-- 用户在线状态: `/user/onlinestatus`
-- 审核结果: `/moderation/audit-result`
-- 聊天室状态: `/chatroom/status`
-- 聊天室 KV: `/chatroom/kv`
-- 用户注销/激活: `/user/deactivation`
-
-### 自定义响应
+## 自定义响应
 
 回调处理器可以通过 `ResponseWriter` 自定义 HTTP 响应：
 
 ```go
-handler := callback.NewHandler(callback.HandlerConfig{
-    AppSecret: "your-app-secret",
+callbackAPI.SetHandlerConfig(callback.HandlerConfig{
     OnMessageRoute: func(w callback.ResponseWriter, msg callback.MessageRouteCallback) error {
         // 检查消息内容
         if msg.SensitiveType > 0 {
@@ -268,23 +288,39 @@ type UserDeactivationCallback struct {
 
 ## API 参考
 
-### Handler 配置
+### callback.API 接口
+
+```go
+type API interface {
+    // HandlerConfig 获取 Handler 配置，用于设置回调处理器
+    HandlerConfig() HandlerConfig
+    // SetHandlerConfig 设置 Handler 配置
+    SetHandlerConfig(config HandlerConfig)
+    // Handler 获取 HTTP Handler 实例
+    // 注意：需要先在 HandlerConfig 中设置回调处理器
+    Handler() *Handler
+}
+```
+
+### HandlerConfig
 
 ```go
 type HandlerConfig struct {
-    AppSecret            string                                              // 应用密钥
-    MessageRoutePath     string                                              // 自定义消息路由路径
-    UserOnlineStatusPath string                                              // 自定义在线状态路径
-    AuditResultPath      string                                              // 自定义审核结果路径
-    ChatroomStatusPath   string                                              // 自定义聊天室状态路径
-    ChatroomKVPath       string                                              // 自定义聊天室 KV 路径
-    UserDeactivationPath string                                              // 自定义用户注销路径
-    OnMessageRoute       func(ResponseWriter, MessageRouteCallback) error    // 消息路由处理器
-    OnUserOnlineStatus   func(ResponseWriter, []UserOnlineStatusCallback) error // 在线状态处理器
-    OnAuditResult        func(ResponseWriter, AuditResultCallback) error     // 审核结果处理器
-    OnChatroomStatus     func(ResponseWriter, ChatroomStatusCallback) error  // 聊天室状态处理器
-    OnChatroomKV         func(ResponseWriter, ChatroomKVCallback) error      // 聊天室 KV 处理器
-    OnUserDeactivation   func(ResponseWriter, UserDeactivationCallback) error // 用户注销处理器
+    // 自定义回调路径（可选，默认使用标准路径）
+    MessageRoutePath     string // 消息路由回调路径，默认 DefaultMessageRoutePath
+    UserOnlineStatusPath string // 用户在线状态回调路径，默认 DefaultUserOnlineStatusPath
+    AuditResultPath      string // 审核结果回调路径，默认 DefaultAuditResultPath
+    ChatroomStatusPath   string // 聊天室状态回调路径，默认 DefaultChatroomStatusPath
+    ChatroomKVPath       string // 聊天室 KV 回调路径，默认 DefaultChatroomKVPath
+    UserDeactivationPath string // 用户注销/激活回调路径，默认 DefaultUserDeactivationPath
+
+    // 回调处理器 - 可以通过 ResponseWriter 自定义响应
+    OnMessageRoute       func(ResponseWriter, MessageRouteCallback) error
+    OnUserOnlineStatus   func(ResponseWriter, []UserOnlineStatusCallback) error
+    OnAuditResult        func(ResponseWriter, AuditResultCallback) error
+    OnChatroomStatus     func(ResponseWriter, ChatroomStatusCallback) error
+    OnChatroomKV         func(ResponseWriter, ChatroomKVCallback) error
+    OnUserDeactivation   func(ResponseWriter, UserDeactivationCallback) error
 }
 ```
 
@@ -299,6 +335,9 @@ func ExtractParams(r *http.Request) CallbackParams
 
 // 便捷方法：从请求中提取参数并验证签名
 func VerifyRequest(r *http.Request, appSecret string) bool
+
+// 从请求中提取 appKey，支持 Query、Header 和请求体
+func ExtractAppKey(r *http.Request) string
 ```
 
 ### IP 白名单
