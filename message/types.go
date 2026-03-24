@@ -8,6 +8,18 @@ type SendResp struct {
 	MessageUID string `json:"messageUID,omitempty"`
 }
 
+// SendChatroomResp 发送聊天室消息响应
+type SendChatroomResp struct {
+	types.BaseResp
+	MessageUIDs []SendChatroomMessageUID `json:"messageUIDs,omitempty"`
+}
+
+// SendChatroomMessageUID 聊天室消息唯一 ID
+type SendChatroomMessageUID struct {
+	ChatroomId string `json:"chatroomId"`
+	MessageUID string `json:"messageUID"`
+}
+
 // RecallResp 撤回消息响应
 type RecallResp struct {
 	types.BaseResp

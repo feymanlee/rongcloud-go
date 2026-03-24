@@ -31,7 +31,7 @@ type API interface {
 	// SendGroup 发送群组消息
 	SendGroup(req *SendGroupReq) (*SendResp, error)
 	// SendChatroom 发送聊天室消息
-	SendChatroom(req *SendChatroomReq) (*SendResp, error)
+	SendChatroom(req *SendChatroomReq) (*SendChatroomResp, error)
 	// SendSystem 发送系统消息
 	SendSystem(req *SendSystemReq) (*SendResp, error)
 	// SendBroadcast 发送广播消息
@@ -170,8 +170,8 @@ func (a *api) SendGroup(req *SendGroupReq) (*SendResp, error) {
 }
 
 // SendChatroom 发送聊天室消息
-func (a *api) SendChatroom(req *SendChatroomReq) (*SendResp, error) {
-	resp := &SendResp{}
+func (a *api) SendChatroom(req *SendChatroomReq) (*SendChatroomResp, error) {
+	resp := &SendChatroomResp{}
 	params := map[string]string{
 		"fromUserId":   req.FromUserId,
 		"toChatroomId": strings.Join(req.ToChatroomId, ","),
