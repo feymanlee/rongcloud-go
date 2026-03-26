@@ -106,7 +106,7 @@ func NewHandler(appSecret string, config HandlerConfig) *Handler {
 // ServeHTTP 实现 http.Handler 接口
 // 根据请求路径分发到不同的回调处理器
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 对于消息路由回调和消息回调服务，appKey 在请求体中，需要先解析表单
+	// 消息回调服务的 appKey 在请求体中，需要先解析表单；消息路由回调的 appKey 在 query string 中，ParseForm 也无害
 	if r.URL.Path == h.config.MessageRoutePath || r.URL.Path == h.config.MessageCallbackPath {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
@@ -167,8 +167,7 @@ func (h *Handler) handleMessageRoute(rw *responseWriter, r *http.Request) {
 		return
 	}
 
-	// 注意：ServeHTTP 中已经调用过 ParseForm 来提取 appKey 验证签名
-	// 这里再次调用是安全的（ParseForm 会检查是否已经解析过）
+	// 注意：ServeHTTP 中已经调用过 ParseForm，这里再次调用是安全的（幂等）
 	if err := r.ParseForm(); err != nil {
 		http.Error(rw, "Invalid form data", http.StatusBadRequest)
 		return
@@ -177,7 +176,7 @@ func (h *Handler) handleMessageRoute(rw *responseWriter, r *http.Request) {
 	// 单个消息路由回调（form-urlencoded 格式）
 	callback := MessageRouteCallback{
 		FromUserId:     r.FormValue("fromUserId"),
-		ToUserId:       r.FormValue("targetId"),
+		ToUserId:       r.FormValue("toUserId"),
 		ObjectName:     r.FormValue("objectName"),
 		Content:        r.FormValue("content"),
 		ChannelType:    r.FormValue("channelType"),
@@ -195,9 +194,8 @@ func (h *Handler) handleMessageRoute(rw *responseWriter, r *http.Request) {
 	if v := r.FormValue("aiGenerated"); v == "true" {
 		callback.AIGenerated = true
 	}
-	// groupUserIds 可能是逗号分隔的字符串
-	if v := r.FormValue("groupUserIds"); v != "" {
-		callback.GroupUserIds = []string{v}
+	if v := r.Form["groupUserIds"]; len(v) > 0 {
+		callback.GroupUserIds = v
 	}
 
 	err := h.config.OnMessageRoute(rw, callback)
