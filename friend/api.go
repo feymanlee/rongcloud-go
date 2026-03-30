@@ -1,6 +1,8 @@
 package friend
 
 import (
+	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/feymanlee/rongcloud-go/internal/core"
@@ -10,7 +12,8 @@ const (
 	pathAdd                  = "/friend/add.json"
 	pathRemove               = "/friend/remove.json"
 	pathBatchRemove          = "/friend/batch/remove.json"
-	pathQuery                = "/friend/query.json"
+	pathGet                  = "/friend/get.json"
+	pathCheck                = "/friend/check.json"
 	pathSetRemark            = "/friend/set_remark.json"
 	pathDirectionFriendQuery = "/friend/direction_friend/query.json"
 	pathBlacklistQuery       = "/friend/blacklist/query.json"
@@ -19,15 +22,19 @@ const (
 // API 好友相关接口
 type API interface {
 	// Add 添加好友
-	Add(userId, friendId, message, status string) (*AddResp, error)
+	Add(userId, targetId string, optType int, extra string) (*AddResp, error)
 	// Remove 删除好友
 	Remove(userId, friendId string) (*RemoveResp, error)
 	// BatchRemove 批量删除好友
 	BatchRemove(userId string, friendIds []string) (*BatchRemoveResp, error)
-	// Query 查询好友列表
+	// Query 查询好友列表（默认参数）
 	Query(userId string) (*QueryResp, error)
-	// QueryByFriendId 根据好友 ID 查询好友信息
-	QueryByFriendId(userId, friendId string) (*QueryResp, error)
+	// QueryWithPage 按 pageToken 分页查询好友列表
+	QueryWithPage(userId, pageToken string, size, order int) (*QueryResp, error)
+	// Check 检查好友关系
+	Check(userId string, targetIds []string) (*CheckResp, error)
+	// QueryByFriendId 根据好友 ID 查询好友关系
+	QueryByFriendId(userId, friendId string) (*CheckResp, error)
 	// SetRemark 设置好友备注
 	SetRemark(userId, friendId, remark string) (*SetRemarkResp, error)
 	// DirectionFriendQuery 查询方向好友
@@ -46,13 +53,17 @@ func NewAPI(client core.Client) API {
 }
 
 // Add 添加好友
-func (a *api) Add(userId, friendId, message, status string) (*AddResp, error) {
+func (a *api) Add(userId, targetId string, optType int, extra string) (*AddResp, error) {
 	resp := &AddResp{}
 	params := map[string]string{
 		"userId":   userId,
-		"friendId": friendId,
-		"message":  message,
-		"status":   status,
+		"targetId": targetId,
+	}
+	if optType > 0 {
+		params["optType"] = strconv.Itoa(optType)
+	}
+	if extra != "" {
+		params["extra"] = extra
 	}
 	err := a.client.Post(pathAdd, params, resp)
 	if err != nil {
@@ -91,29 +102,56 @@ func (a *api) BatchRemove(userId string, friendIds []string) (*BatchRemoveResp, 
 
 // Query 查询好友列表
 func (a *api) Query(userId string) (*QueryResp, error) {
+	return a.QueryWithPage(userId, "", 0, -1)
+}
+
+// QueryWithPage 按 pageToken 分页查询好友列表
+func (a *api) QueryWithPage(userId, pageToken string, size, order int) (*QueryResp, error) {
 	resp := &QueryResp{}
 	params := map[string]string{
 		"userId": userId,
 	}
-	err := a.client.Post(pathQuery, params, resp)
+	if pageToken != "" {
+		params["pageToken"] = pageToken
+	}
+	if size > 0 {
+		params["size"] = strconv.Itoa(size)
+	}
+	if order >= 0 {
+		params["order"] = strconv.Itoa(order)
+	}
+	err := a.client.Post(pathGet, params, resp)
+	if err != nil {
+		return nil, err
+	}
+	resp.syncCompatFields()
+	return resp, nil
+}
+
+// Check 检查好友关系
+func (a *api) Check(userId string, targetIds []string) (*CheckResp, error) {
+	if len(targetIds) == 0 {
+		return nil, errors.New("rongcloud: targetIds is required")
+	}
+	if len(targetIds) > 100 {
+		return nil, errors.New("rongcloud: targetIds must not exceed 100")
+	}
+
+	resp := &CheckResp{}
+	params := map[string]string{
+		"userId":    userId,
+		"targetIds": strings.Join(targetIds, ","),
+	}
+	err := a.client.Post(pathCheck, params, resp)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-// QueryByFriendId 根据好友 ID 查询好友信息
-func (a *api) QueryByFriendId(userId, friendId string) (*QueryResp, error) {
-	resp := &QueryResp{}
-	params := map[string]string{
-		"userId":   userId,
-		"friendId": friendId,
-	}
-	err := a.client.Post(pathQuery, params, resp)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+// QueryByFriendId 根据好友 ID 查询好友关系
+func (a *api) QueryByFriendId(userId, friendId string) (*CheckResp, error) {
+	return a.Check(userId, []string{friendId})
 }
 
 // SetRemark 设置好友备注
