@@ -10,8 +10,7 @@ import (
 
 const (
 	pathAdd                  = "/friend/add.json"
-	pathRemove               = "/friend/remove.json"
-	pathBatchRemove          = "/friend/batch/remove.json"
+	pathDelete               = "/friend/delete.json"
 	pathGet                  = "/friend/get.json"
 	pathCheck                = "/friend/check.json"
 	pathSetRemark            = "/friend/set_remark.json"
@@ -24,9 +23,9 @@ type API interface {
 	// Add 添加好友
 	Add(userId, targetId string, optType int, extra string) (*AddResp, error)
 	// Remove 删除好友
-	Remove(userId, friendId string) (*RemoveResp, error)
+	Remove(userId, targetId string) (*RemoveResp, error)
 	// BatchRemove 批量删除好友
-	BatchRemove(userId string, friendIds []string) (*BatchRemoveResp, error)
+	BatchRemove(userId string, targetIds []string) (*BatchRemoveResp, error)
 	// Query 查询好友列表（默认参数）
 	Query(userId string) (*QueryResp, error)
 	// QueryWithPage 按 pageToken 分页查询好友列表
@@ -73,13 +72,17 @@ func (a *api) Add(userId, targetId string, optType int, extra string) (*AddResp,
 }
 
 // Remove 删除好友
-func (a *api) Remove(userId, friendId string) (*RemoveResp, error) {
+func (a *api) Remove(userId, targetId string) (*RemoveResp, error) {
+	if targetId == "" {
+		return nil, errors.New("rongcloud: targetId is required")
+	}
+
 	resp := &RemoveResp{}
 	params := map[string]string{
-		"userId":   userId,
-		"friendId": friendId,
+		"userId":    userId,
+		"targetIds": targetId,
 	}
-	err := a.client.Post(pathRemove, params, resp)
+	err := a.client.Post(pathDelete, params, resp)
 	if err != nil {
 		return nil, err
 	}
@@ -87,13 +90,20 @@ func (a *api) Remove(userId, friendId string) (*RemoveResp, error) {
 }
 
 // BatchRemove 批量删除好友
-func (a *api) BatchRemove(userId string, friendIds []string) (*BatchRemoveResp, error) {
+func (a *api) BatchRemove(userId string, targetIds []string) (*BatchRemoveResp, error) {
+	if len(targetIds) == 0 {
+		return nil, errors.New("rongcloud: targetIds is required")
+	}
+	if len(targetIds) > 100 {
+		return nil, errors.New("rongcloud: targetIds must not exceed 100")
+	}
+
 	resp := &BatchRemoveResp{}
 	params := map[string]string{
 		"userId":    userId,
-		"friendIds": strings.Join(friendIds, ","),
+		"targetIds": strings.Join(targetIds, ","),
 	}
-	err := a.client.Post(pathBatchRemove, params, resp)
+	err := a.client.Post(pathDelete, params, resp)
 	if err != nil {
 		return nil, err
 	}

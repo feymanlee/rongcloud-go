@@ -81,9 +81,9 @@ func TestRemove(t *testing.T) {
 
 	call := mock.LastCall()
 	assertEqual(t, call.Method, "Post")
-	assertEqual(t, call.Path, "/friend/remove.json")
+	assertEqual(t, call.Path, "/friend/delete.json")
 	assertEqual(t, call.Params["userId"], "user1")
-	assertEqual(t, call.Params["friendId"], "friend1")
+	assertEqual(t, call.Params["targetIds"], "friend1")
 }
 
 func TestRemove_Error(t *testing.T) {
@@ -99,6 +99,20 @@ func TestRemove_Error(t *testing.T) {
 	}
 }
 
+func TestRemove_EmptyTargetId(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	_, err := a.Remove("user1", "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	assertEqual(t, err.Error(), "rongcloud: targetId is required")
+	if len(mock.Calls) != 0 {
+		t.Fatal("expected no request to be sent")
+	}
+}
+
 func TestBatchRemove(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
@@ -111,9 +125,9 @@ func TestBatchRemove(t *testing.T) {
 
 	call := mock.LastCall()
 	assertEqual(t, call.Method, "Post")
-	assertEqual(t, call.Path, "/friend/batch/remove.json")
+	assertEqual(t, call.Path, "/friend/delete.json")
 	assertEqual(t, call.Params["userId"], "user1")
-	assertEqual(t, call.Params["friendIds"], "f1,f2,f3")
+	assertEqual(t, call.Params["targetIds"], "f1,f2,f3")
 }
 
 func TestBatchRemove_Error(t *testing.T) {
@@ -126,6 +140,39 @@ func TestBatchRemove_Error(t *testing.T) {
 	_, err := a.BatchRemove("user1", []string{"f1"})
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestBatchRemove_EmptyTargetIds(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	_, err := a.BatchRemove("user1", nil)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	assertEqual(t, err.Error(), "rongcloud: targetIds is required")
+	if len(mock.Calls) != 0 {
+		t.Fatal("expected no request to be sent")
+	}
+}
+
+func TestBatchRemove_TooManyTargetIds(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	targetIds := make([]string, 101)
+	for i := range targetIds {
+		targetIds[i] = "friend"
+	}
+
+	_, err := a.BatchRemove("user1", targetIds)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	assertEqual(t, err.Error(), "rongcloud: targetIds must not exceed 100")
+	if len(mock.Calls) != 0 {
+		t.Fatal("expected no request to be sent")
 	}
 }
 
