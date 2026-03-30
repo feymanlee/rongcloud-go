@@ -23,7 +23,7 @@ type API interface {
 	// Add 添加好友
 	Add(userId, targetId string, optType int, extra string) (*AddResp, error)
 	// Remove 删除好友
-	Remove(userId, targetId string) (*RemoveResp, error)
+	Remove(userId, targetIds string) (*RemoveResp, error)
 	// BatchRemove 批量删除好友
 	BatchRemove(userId string, targetIds []string) (*BatchRemoveResp, error)
 	// Query 查询好友列表（默认参数）
@@ -72,15 +72,15 @@ func (a *api) Add(userId, targetId string, optType int, extra string) (*AddResp,
 }
 
 // Remove 删除好友
-func (a *api) Remove(userId, targetId string) (*RemoveResp, error) {
-	if targetId == "" {
+func (a *api) Remove(userId, targetIds string) (*RemoveResp, error) {
+	if targetIds == "" {
 		return nil, errors.New("rongcloud: targetId is required")
 	}
 
 	resp := &RemoveResp{}
 	params := map[string]string{
 		"userId":    userId,
-		"targetIds": targetId,
+		"targetIds": targetIds,
 	}
 	err := a.client.Post(pathDelete, params, resp)
 	if err != nil {
