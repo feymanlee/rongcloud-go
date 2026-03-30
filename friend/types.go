@@ -2,6 +2,14 @@ package friend
 
 import "github.com/feymanlee/rongcloud-go/internal/types"
 
+// 添加好友 optType 常量
+const (
+	// AddOptTypeByVerifyLevel 根据目标用户设置的添加好友验证等级添加好友（默认）
+	AddOptTypeByVerifyLevel = 1
+	// AddOptTypeDirect 直接添加为好友，无需经过目标用户同意
+	AddOptTypeDirect = 2
+)
+
 // AddResp 添加好友响应
 type AddResp struct {
 	types.BaseResp

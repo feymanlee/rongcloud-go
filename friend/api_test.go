@@ -19,7 +19,7 @@ func TestAdd(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
 
-	resp, err := a.Add("user1", "friend1", 1, "hello")
+	resp, err := a.Add("user1", "friend1", AddOptTypeByVerifyLevel, "hello")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestAdd_Error(t *testing.T) {
 	}
 	a := NewAPI(mock)
 
-	_, err := a.Add("user1", "friend1", 1, "hello")
+	_, err := a.Add("user1", "friend1", AddOptTypeByVerifyLevel, "hello")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
