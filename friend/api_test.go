@@ -235,7 +235,7 @@ func TestQueryWithPage(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
 
-	resp, err := a.QueryWithPage("user1", "next-token", 50, 1)
+	resp, err := a.QueryWithPage("user1", "next-token", 50, QueryOrderDesc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

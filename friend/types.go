@@ -10,6 +10,14 @@ const (
 	AddOptTypeDirect = 2
 )
 
+// 好友查询 order 常量
+const (
+	// QueryOrderAsc 按添加好友时间正序（默认）
+	QueryOrderAsc = 0
+	// QueryOrderDesc 按添加好友时间倒序
+	QueryOrderDesc = 1
+)
+
 // AddResp 添加好友响应
 type AddResp struct {
 	types.BaseResp
