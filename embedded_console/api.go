@@ -79,14 +79,14 @@ func (a *api) GetAccessToken(pageCode string, usefulLife int64) (*GetAccessToken
 	}
 
 	if httpResp.StatusCode() < 200 || httpResp.StatusCode() >= 300 {
-		if resp.Code != 0 || resp.Message != "" {
-			return nil, core.NewError(resp.Code, resp.Message)
+		if resp.Code != 0 {
+			return nil, core.NewError(resp.Code, "")
 		}
 		return nil, fmt.Errorf("rongcloud: unexpected http status %d", httpResp.StatusCode())
 	}
 
 	if resp.Code != successCode {
-		return nil, core.NewError(resp.Code, resp.Message)
+		return nil, core.NewError(resp.Code, "")
 	}
 
 	return resp, nil

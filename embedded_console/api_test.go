@@ -69,8 +69,7 @@ func TestGetAccessToken_BusinessError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(GetAccessTokenResp{
-			Code:    10001,
-			Message: "invalid page code",
+			Code: 10001,
 		})
 	}))
 	defer server.Close()
@@ -85,7 +84,7 @@ func TestGetAccessToken_BusinessError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	assertEqual(t, err.Error(), "rongcloud: code=10001, message=invalid page code")
+	assertEqual(t, err.Error(), "rongcloud: code=10001, message=")
 }
 
 func TestGetAccessToken_HTTPError(t *testing.T) {
@@ -159,8 +158,7 @@ func TestGetAccessToken_HTTPStatusWithJSONError(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(GetAccessTokenResp{
-			Code:    10002,
-			Message: "invalid access key",
+			Code: 10002,
 		})
 	}))
 	defer server.Close()
@@ -175,7 +173,7 @@ func TestGetAccessToken_HTTPStatusWithJSONError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	assertEqual(t, err.Error(), "rongcloud: code=10002, message=invalid access key")
+	assertEqual(t, err.Error(), "rongcloud: code=10002, message=")
 }
 
 func TestGetAccessToken_InvalidJSON(t *testing.T) {

@@ -29,7 +29,8 @@ type GetAccessTokenReq struct {
 
 // GetAccessTokenResp 获取嵌入控制台 access token 响应
 type GetAccessTokenResp struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    string `json:"data"`
+	Code     int    `json:"code"`
+	Data     string `json:"data"`
+	Expire   int64  `json:"expire"`
+	AccessId string `json:"access_id"`
 }
