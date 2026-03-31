@@ -33,8 +33,8 @@ type BatchRemoveResp struct {
 	types.BaseResp
 }
 
-// SetRemarkResp 设置好友备注响应
-type SetRemarkResp struct {
+// SetProfileResp 设置好友资料响应
+type SetProfileResp struct {
 	types.BaseResp
 }
 

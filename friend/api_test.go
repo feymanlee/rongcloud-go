@@ -373,11 +373,11 @@ func TestCheck_TooManyTargetIds(t *testing.T) {
 	}
 }
 
-func TestSetRemark(t *testing.T) {
+func TestSetProfile(t *testing.T) {
 	mock := testutil.NewMockClient()
 	a := NewAPI(mock)
 
-	resp, err := a.SetRemark("user1", "friend1", "best friend")
+	resp, err := a.SetProfile("user1", "friend1", "best friend", "{\"tag\":\"vip\"}")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -385,20 +385,41 @@ func TestSetRemark(t *testing.T) {
 
 	call := mock.LastCall()
 	assertEqual(t, call.Method, "Post")
-	assertEqual(t, call.Path, "/friend/set_remark.json")
+	assertEqual(t, call.Path, "/friend/profile/set.json")
 	assertEqual(t, call.Params["userId"], "user1")
-	assertEqual(t, call.Params["friendId"], "friend1")
-	assertEqual(t, call.Params["remark"], "best friend")
+	assertEqual(t, call.Params["targetId"], "friend1")
+	assertEqual(t, call.Params["remarkName"], "best friend")
+	assertEqual(t, call.Params["friendExtProfile"], "{\"tag\":\"vip\"}")
 }
 
-func TestSetRemark_Error(t *testing.T) {
+func TestSetProfile_OmitOptionalParams(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	resp, err := a.SetProfile("user1", "friend1", "", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Path, "/friend/profile/set.json")
+	if _, ok := call.Params["remarkName"]; ok {
+		t.Fatal("expected remarkName to be omitted when empty")
+	}
+	if _, ok := call.Params["friendExtProfile"]; ok {
+		t.Fatal("expected friendExtProfile to be omitted when empty")
+	}
+}
+
+func TestSetProfile_Error(t *testing.T) {
 	mock := testutil.NewMockClient()
 	mock.PostFunc = func(path string, params map[string]string, resp any) error {
 		return errors.New("fail")
 	}
 	a := NewAPI(mock)
 
-	_, err := a.SetRemark("user1", "friend1", "remark")
+	_, err := a.SetProfile("user1", "friend1", "remark", "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

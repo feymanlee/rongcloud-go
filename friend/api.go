@@ -13,7 +13,7 @@ const (
 	pathDelete               = "/friend/delete.json"
 	pathGet                  = "/friend/get.json"
 	pathCheck                = "/friend/check.json"
-	pathSetRemark            = "/friend/set_remark.json"
+	pathSetProfile           = "/friend/profile/set.json"
 	pathDirectionFriendQuery = "/friend/direction_friend/query.json"
 	pathBlacklistQuery       = "/friend/blacklist/query.json"
 )
@@ -34,8 +34,8 @@ type API interface {
 	Check(userId string, targetIds []string) (*CheckResp, error)
 	// QueryByFriendId 根据好友 ID 查询好友关系
 	QueryByFriendId(userId, friendId string) (*CheckResp, error)
-	// SetRemark 设置好友备注
-	SetRemark(userId, friendId, remark string) (*SetRemarkResp, error)
+	// SetProfile 设置好友资料
+	SetProfile(userId, targetId, remarkName, friendExtProfile string) (*SetProfileResp, error)
 	// DirectionFriendQuery 查询方向好友
 	DirectionFriendQuery(userId string) (*DirectionFriendQueryResp, error)
 	// GetBlacklist 获取黑名单
@@ -164,15 +164,20 @@ func (a *api) QueryByFriendId(userId, friendId string) (*CheckResp, error) {
 	return a.Check(userId, []string{friendId})
 }
 
-// SetRemark 设置好友备注
-func (a *api) SetRemark(userId, friendId, remark string) (*SetRemarkResp, error) {
-	resp := &SetRemarkResp{}
+// SetProfile 设置好友资料
+func (a *api) SetProfile(userId, targetId, remarkName, friendExtProfile string) (*SetProfileResp, error) {
+	resp := &SetProfileResp{}
 	params := map[string]string{
 		"userId":   userId,
-		"friendId": friendId,
-		"remark":   remark,
+		"targetId": targetId,
 	}
-	err := a.client.Post(pathSetRemark, params, resp)
+	if remarkName != "" {
+		params["remarkName"] = remarkName
+	}
+	if friendExtProfile != "" {
+		params["friendExtProfile"] = friendExtProfile
+	}
+	err := a.client.Post(pathSetProfile, params, resp)
 	if err != nil {
 		return nil, err
 	}
