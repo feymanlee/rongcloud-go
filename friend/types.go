@@ -18,6 +18,18 @@ const (
 	QueryOrderDesc = 1
 )
 
+// 检查好友关系结果常量
+const (
+	// CheckResultNoFriend 表示操作方不是目标方好友，目标方也不是操作方好友。
+	CheckResultNoFriend = 1
+	// CheckResultReserved2 为预留字段，当前文档说明暂不返回。
+	CheckResultReserved2 = 2
+	// CheckResultReserved3 为预留字段，当前文档说明暂不返回。
+	CheckResultReserved3 = 3
+	// CheckResultMutualFriend 表示操作方是目标方好友，目标方也是操作方好友。
+	CheckResultMutualFriend = 4
+)
+
 // AddResp 添加好友响应
 type AddResp struct {
 	types.BaseResp
@@ -67,7 +79,7 @@ type QueryResp struct {
 // CheckFriendResult 好友关系检查结果
 type CheckFriendResult struct {
 	UserId string `json:"userId"` // 目标用户 ID
-	Result int    `json:"result"` // 检查结果
+	Result int    `json:"result"` // 检查结果，见 CheckResult* 常量
 }
 
 // CheckResp 检查好友关系响应

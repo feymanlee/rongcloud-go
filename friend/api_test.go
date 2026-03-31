@@ -321,7 +321,7 @@ func TestCheck_Response(t *testing.T) {
 			"code": 200,
 			"results": [
 				{"userId": "friend1", "result": 1},
-				{"userId": "friend2", "result": 0}
+				{"userId": "friend2", "result": 4}
 			]
 		}`), resp)
 	}
@@ -335,9 +335,9 @@ func TestCheck_Response(t *testing.T) {
 	assertEqual(t, resp.Code, 200)
 	assertEqual(t, len(resp.Results), 2)
 	assertEqual(t, resp.Results[0].UserId, "friend1")
-	assertEqual(t, resp.Results[0].Result, 1)
+	assertEqual(t, resp.Results[0].Result, CheckResultNoFriend)
 	assertEqual(t, resp.Results[1].UserId, "friend2")
-	assertEqual(t, resp.Results[1].Result, 0)
+	assertEqual(t, resp.Results[1].Result, CheckResultMutualFriend)
 }
 
 func TestCheck_EmptyTargetIds(t *testing.T) {
