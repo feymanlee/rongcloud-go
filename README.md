@@ -1,6 +1,6 @@
 # RongCloud IM Server SDK for Go
 
-融云即时通讯服务端 Go SDK，覆盖 ~198 个 API，提供模块化、类型安全的接口。
+融云即时通讯服务端 Go SDK，覆盖 ~199 个 API，提供模块化、类型安全的接口。
 
 ## 安装
 
@@ -84,6 +84,12 @@ client := rc.NewRC(&rc.Options{
 | `user_block` | `UserBlock()` | 8 | 黑名单、白名单、消息过滤 |
 | `user_profile` | `UserProfile()` | 4 | 用户资料托管 (JSON) |
 
+### 控制台嵌入
+
+| 模块 | 访问方法 | API 数量 | 说明 |
+|------|----------|---------|------|
+| `embedded_console` | `EmbeddedConsole()` | 1 | 获取嵌入控制台 access token |
+
 ### 社交关系
 
 | 模块 | 访问方法 | API 数量 | 说明 |
@@ -151,6 +157,16 @@ _, err = client.User().BlockAdd("uid001", 30)
 
 // 查询用户在线状态
 status, err := client.User().OnlineStatusCheck("uid001")
+```
+
+### 控制台嵌入
+
+```go
+resp, err := client.EmbeddedConsole().GetAccessToken(embeddedconsole.PageCodeUserManage, 3600)
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println(resp.Data)
 ```
 
 ### 群组

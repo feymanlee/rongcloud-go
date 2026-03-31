@@ -2,6 +2,7 @@ package rongcloud
 
 import (
 	"sync"
+	"time"
 
 	"github.com/feymanlee/rongcloud-go/callback"
 	"github.com/feymanlee/rongcloud-go/chatroom"
@@ -11,6 +12,7 @@ import (
 	"github.com/feymanlee/rongcloud-go/chatroom_priority"
 	"github.com/feymanlee/rongcloud-go/chatroom_whitelist"
 	"github.com/feymanlee/rongcloud-go/conversation"
+	"github.com/feymanlee/rongcloud-go/embedded_console"
 	"github.com/feymanlee/rongcloud-go/friend"
 	"github.com/feymanlee/rongcloud-go/group"
 	"github.com/feymanlee/rongcloud-go/group_mute"
@@ -54,6 +56,8 @@ type RC interface {
 	UserBlock() userblock.API
 	// UserProfile 用户资料托管
 	UserProfile() userprofile.API
+	// EmbeddedConsole 控制台嵌入
+	EmbeddedConsole() embeddedconsole.API
 	// Friend 好友管理
 	Friend() friend.API
 	// Message 消息管理
@@ -103,13 +107,17 @@ type Options = core.Options
 func NewRC(opt *Options) RC {
 	return &rc{
 		client:    core.NewClient(opt),
+		appKey:    opt.AppKey,
 		appSecret: opt.AppSecret,
+		timeout:   opt.Timeout,
 	}
 }
 
 type rc struct {
 	client    core.Client
+	appKey    string
 	appSecret string
+	timeout   time.Duration
 
 	user struct {
 		once     sync.Once
@@ -126,6 +134,10 @@ type rc struct {
 	userProfile struct {
 		once     sync.Once
 		instance userprofile.API
+	}
+	embeddedConsole struct {
+		once     sync.Once
+		instance embeddedconsole.API
 	}
 	friend struct {
 		once     sync.Once
@@ -235,6 +247,13 @@ func (r *rc) UserProfile() userprofile.API {
 		r.userProfile.instance = userprofile.NewAPI(r.client)
 	})
 	return r.userProfile.instance
+}
+
+func (r *rc) EmbeddedConsole() embeddedconsole.API {
+	r.embeddedConsole.once.Do(func() {
+		r.embeddedConsole.instance = embeddedconsole.NewAPI(r.appKey, r.timeout)
+	})
+	return r.embeddedConsole.instance
 }
 
 func (r *rc) Friend() friend.API {
