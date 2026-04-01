@@ -105,6 +105,13 @@ type DeactivateQueryResp struct {
 	Users []string `json:"users"`
 }
 
+// ---------- Delete (删除用户) ----------
+
+// DeleteResp 删除用户响应
+type DeleteResp struct {
+	types.BaseResp
+}
+
 // ---------- Reactivate (重新激活) ----------
 
 // ReactivateResp 重新激活用户响应

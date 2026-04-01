@@ -24,6 +24,7 @@ const (
 	pathDeactivate         = "/user/deactivate.json"
 	pathDeactivateQuery    = "/user/deactivate/query.json"
 	pathReactivate         = "/user/reactivate.json"
+	pathDelete             = "/user/delusers.json"
 )
 
 // API 用户相关接口
@@ -56,6 +57,8 @@ type API interface {
 	DeactivateQuery(pageNo, pageSize int) (*DeactivateQueryResp, error)
 	// Reactivate 重新激活用户
 	Reactivate(userIDs []string) (*ReactivateResp, error)
+	// Delete 删除用户（仅开发环境）
+	Delete(userIDs []string) (*DeleteResp, error)
 }
 
 type api struct {
@@ -224,6 +227,18 @@ func (a *api) DeactivateQuery(pageNo, pageSize int) (*DeactivateQueryResp, error
 	}
 	resp := &DeactivateQueryResp{}
 	if err := a.client.Post(pathDeactivateQuery, params, resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// Delete 删除用户（仅开发环境）
+func (a *api) Delete(userIDs []string) (*DeleteResp, error) {
+	params := map[string]string{
+		"userId": strings.Join(userIDs, ","),
+	}
+	resp := &DeleteResp{}
+	if err := a.client.Post(pathDelete, params, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

@@ -541,3 +541,36 @@ func TestReactivate_Error(t *testing.T) {
 		t.Error("expected nil response on error")
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------
+
+func TestDelete(t *testing.T) {
+	mock := testutil.NewMockClient()
+	a := NewAPI(mock)
+
+	resp, err := a.Delete([]string{"uid015", "uid016"})
+	assertNoError(t, err)
+	assertNotNil(t, resp)
+	assertEqual(t, resp.Code, 200)
+
+	call := mock.LastCall()
+	assertEqual(t, call.Method, "Post")
+	assertEqual(t, call.Path, "/user/delusers.json")
+	assertEqual(t, call.Params["userId"], "uid015,uid016")
+}
+
+func TestDelete_Error(t *testing.T) {
+	mock := testutil.NewMockClient()
+	mock.PostFunc = func(path string, params map[string]string, resp any) error {
+		return errors.New("delete failed")
+	}
+	a := NewAPI(mock)
+
+	resp, err := a.Delete([]string{"uid015"})
+	assertError(t, err)
+	if resp != nil {
+		t.Error("expected nil response on error")
+	}
+}
